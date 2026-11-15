@@ -1,0 +1,30 @@
+Redis server version: 8.6.3
+
+=== 1. Login session with automatic expiry (TTL) ===
+stored; TTL = 2 s; value: {"customer_id":1,"device":"android"}
+after 2.5 s: null (expired by itself, no cleanup job)
+
+=== 2. Shopping cart as a hash (field = variant, value = quantity) ===
+cart:1 = {"1":"1","4":"2"} | TTL days ~ 7
+
+=== 3. Counters, recently viewed list, top-sellers leaderboard ===
+views:product:7 = 1000
+recent:1 (newest first, max 5, no duplicates) = ["12","16","15","14","11"]
+top sellers = [["s2",355],["s1",120],["s3",90]]
+
+=== 4. Flash sale: 1 unit left, 50 buyers at once (compare Portfolio 3) ===
+successful purchases = 1 of 50 attempts; stock left = 0
+naive GET-then-SET: successful purchases = 50 of 50 (should be 1); stock left = 0
+
+=== 5. Cache-aside for the product page (Redis in front of PostgreSQL) ===
+one product page: PostgreSQL median 0.766 ms (p95 1.736); Redis GET median 0.176 ms (p95 0.296)
+5,000 requests with skewed popularity: no cache 1.72 s | cache-aside 2.91 s | hit rate 71.0% | speed-up 0.6x
+finding: see the speed-up above. With a fast, in-memory small catalogue on the same machine a cache miss pays for PostgreSQL plus the Redis write, and a hit saves well under 1 ms, so the gain on a cheap query is small.
+expensive report (Portfolio 2 Q8, a heavy join): first call (miss) 125.0 ms; later calls (hits) median 0.225 ms -> caching pays when the query is expensive and the answer can be a minute old.
+cost: after a price change the page can be stale for up to the TTL (60 s) unless the key is deleted on update.
+
+=== 6. Durability: Redis without and with an append-only file (kill -9 test) ===
+no persistence (--save '' --appendonly no) after kill -9 and restart, key = null
+append-only file, fsync every second after kill -9 and restart, key = "ORD-1"
+append-only file, fsync always       after kill -9 and restart, key = "ORD-1"
+note: kill -9 only kills the Redis process; the operating system still holds the written bytes, so 'everysec' also survives here. The difference between 'everysec' (can lose about 1 s) and 'always' only shows in a power cut, which I did not test.

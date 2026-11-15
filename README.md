@@ -82,9 +82,9 @@ Portfolio 4’s analysis identifies the comparisons that still need measured res
 
 ## AI assistance
 
-I used ChatGPT/Codex while developing this portfolio. The assistance included explaining concepts such as normalisation and transitive dependencies, drafting and revising documentation, generating and correcting SQL and JavaScript, helping prepare diagrams and test scripts, and diagnosing errors from terminal output.
+I used ChatGPT/Codex while developing this portfolio. The assistance included explaining concepts such as explaining transitive dependencies, drafting and revising documentation, generating and correcting SQL and JavaScript, test scripts, and diagnosing errors from terminal output. Diagrams were prepared using mermaid extension in vscode marketplace
 
-AI also helped align scripts with the UUID-based schema and run selected checks in separate test databases. Where a test was blocked, declined or not run, that limitation should remain visible. Generated text and code are not evidence that an experiment succeeded; saved database output and reproducible checks are needed to support the results.
+AI also helped align scripts with the UUID-based schema  as previous work used integers for ID causing a discrepancy across the app, and run selected checks in separate test databases. Where a test was blocked, declined or not run, that limitation should remain visible. Generated text and code are not evidence that an experiment succeeded; saved database output and reproducible checks are needed to support the results.
 
 This repository therefore includes AI-assisted work. The explanations, scripts and results still need to be reviewed against the course requirements, and I remain responsible for understanding and explaining what is submitted. The portfolio notes distinguish measured results from proposed designs and work that is still pending.
 
@@ -93,3 +93,7 @@ This repository therefore includes AI-assisted work. The explanations, scripts a
 The project simplifies a real marketplace so the database concepts remain manageable. Portfolio 1 tracks a single warehouse and allows at most one shipment per seller for each order. The datasets are synthetic, and most experiments use local services rather than a production deployment.
 
 The business context draws on public descriptions of Konga, including its seller handbook and coverage from Techpoint and Entrepreneurs.ng. The database structure and generated records are part of this simulation.
+
+
+<!-- Note -->
+portfolio 5 is incomplete as I am not very avast with cloud services
