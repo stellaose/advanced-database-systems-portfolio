@@ -7,9 +7,9 @@ Idea: Session B changes a row but has not committed. Session A, even when it ask
        -> BEGIN
   B: BEGIN
        -> BEGIN
-  B: UPDATE inventory SET quantity_in_store = 99 WHERE variant_id = 1    -- uncommitted
+  B: UPDATE inventory SET quantity_in_store = 99 WHERE variant_id = '794c702a-beb4-4d9b-a4ce-e46393448c09'    -- uncommitted
        -> UPDATE 1
-  A: SELECT quantity_in_store FROM inventory WHERE variant_id = 1    -- returns at once; sees the OLD value
+  A: SELECT quantity_in_store FROM inventory WHERE variant_id = '794c702a-beb4-4d9b-a4ce-e46393448c09'    -- returns at once; sees the OLD value
        -> 25
   B: ROLLBACK
        -> ROLLBACK
@@ -24,15 +24,15 @@ Idea: A reads twice inside one transaction while B commits a change in between.
   --- isolation level: READ COMMITTED ---
   A: BEGIN ISOLATION LEVEL READ COMMITTED
        -> BEGIN
-  A: SELECT quantity_in_store FROM inventory WHERE variant_id = 1    -- first read
+  A: SELECT quantity_in_store FROM inventory WHERE variant_id = '794c702a-beb4-4d9b-a4ce-e46393448c09'    -- first read
        -> 25
   A: SELECT count(*) FROM orders WHERE total_amount = 1.00    -- first count
        -> 0
-  B: UPDATE inventory SET quantity_in_store = 20 WHERE variant_id = 1    -- autocommit: B commits at once
+  B: UPDATE inventory SET quantity_in_store = 20 WHERE variant_id = '794c702a-beb4-4d9b-a4ce-e46393448c09'    -- autocommit: B commits at once
        -> UPDATE 1
-  B: INSERT INTO orders (customer_id, shipping_address_id, total_amount) VALUES (2, 2, 1.00)    -- B adds a row and commits
+  B: INSERT INTO orders (customer_id, shipping_address_id, total_amount) VALUES ('4cb025ea-36e9-4b9f-8c44-0475cf012951', 'a69034f9-5dac-4987-b5d8-576114135d44', 1.00)    -- B adds a row and commits
        -> INSERT 0 1
-  A: SELECT quantity_in_store FROM inventory WHERE variant_id = 1    -- second read
+  A: SELECT quantity_in_store FROM inventory WHERE variant_id = '794c702a-beb4-4d9b-a4ce-e46393448c09'    -- second read
        -> 20
   A: SELECT count(*) FROM orders WHERE total_amount = 1.00    -- second count
        -> 1
@@ -42,15 +42,15 @@ Idea: A reads twice inside one transaction while B commits a change in between.
   --- isolation level: REPEATABLE READ ---
   A: BEGIN ISOLATION LEVEL REPEATABLE READ
        -> BEGIN
-  A: SELECT quantity_in_store FROM inventory WHERE variant_id = 1    -- first read
+  A: SELECT quantity_in_store FROM inventory WHERE variant_id = '794c702a-beb4-4d9b-a4ce-e46393448c09'    -- first read
        -> 25
   A: SELECT count(*) FROM orders WHERE total_amount = 1.00    -- first count
        -> 0
-  B: UPDATE inventory SET quantity_in_store = 20 WHERE variant_id = 1    -- autocommit: B commits at once
+  B: UPDATE inventory SET quantity_in_store = 20 WHERE variant_id = '794c702a-beb4-4d9b-a4ce-e46393448c09'    -- autocommit: B commits at once
        -> UPDATE 1
-  B: INSERT INTO orders (customer_id, shipping_address_id, total_amount) VALUES (2, 2, 1.00)    -- B adds a row and commits
+  B: INSERT INTO orders (customer_id, shipping_address_id, total_amount) VALUES ('4cb025ea-36e9-4b9f-8c44-0475cf012951', 'a69034f9-5dac-4987-b5d8-576114135d44', 1.00)    -- B adds a row and commits
        -> INSERT 0 1
-  A: SELECT quantity_in_store FROM inventory WHERE variant_id = 1    -- second read
+  A: SELECT quantity_in_store FROM inventory WHERE variant_id = '794c702a-beb4-4d9b-a4ce-e46393448c09'    -- second read
        -> 25
   A: SELECT count(*) FROM orders WHERE total_amount = 1.00    -- second count
        -> 0
@@ -67,32 +67,32 @@ Idea: Only 1 unit of variant 3 is in stock. Two customers click 'buy' at the sam
        -> BEGIN
   B (customer 2): BEGIN
        -> BEGIN
-  A (customer 1): SELECT quantity_in_store - quantity_reserved AS available, quantity_reserved FROM inventory WHERE variant_id = 3
+  A (customer 1): SELECT quantity_in_store - quantity_reserved AS available, quantity_reserved FROM inventory WHERE variant_id = 'dfbee643-4577-4e04-8b74-06770618c5f8'
        -> 1, 0
-  B (customer 2): SELECT quantity_in_store - quantity_reserved AS available, quantity_reserved FROM inventory WHERE variant_id = 3
+  B (customer 2): SELECT quantity_in_store - quantity_reserved AS available, quantity_reserved FROM inventory WHERE variant_id = 'dfbee643-4577-4e04-8b74-06770618c5f8'
        -> 1, 0
        .. both applications see available = 1, so both decide the sale is OK
-  A (customer 1): UPDATE inventory SET quantity_reserved = 1 WHERE variant_id = 3    -- value computed in the app from its earlier read
+  A (customer 1): UPDATE inventory SET quantity_reserved = 1 WHERE variant_id = 'dfbee643-4577-4e04-8b74-06770618c5f8'    -- value computed in the app from its earlier read
        -> UPDATE 1
   A (customer 1): COMMIT
        -> COMMIT
-  B (customer 2): UPDATE inventory SET quantity_reserved = 1 WHERE variant_id = 3    -- overwrites A's work with the same number
+  B (customer 2): UPDATE inventory SET quantity_reserved = 1 WHERE variant_id = 'dfbee643-4577-4e04-8b74-06770618c5f8'    -- overwrites A's work with the same number
        -> UPDATE 1
   B (customer 2): COMMIT
        -> COMMIT
-  A (customer 1): SELECT variant_id, quantity_in_store AS on_hand, quantity_reserved AS reserved FROM inventory WHERE variant_id = 3
-       -> 3, 1, 1
+  A (customer 1): SELECT variant_id, quantity_in_store AS on_hand, quantity_reserved AS reserved FROM inventory WHERE variant_id = 'dfbee643-4577-4e04-8b74-06770618c5f8'
+       -> dfbee643-4577-4e04-8b74-06770618c5f8, 1, 1
 
   --- S3b. FIX 1: pessimistic locking with SELECT ... FOR UPDATE ---
   A (customer 1): BEGIN
        -> BEGIN
   B (customer 2): BEGIN
        -> BEGIN
-  A (customer 1): SELECT quantity_in_store - quantity_reserved AS available FROM inventory WHERE variant_id = 3 FOR UPDATE    -- A takes the row lock
+  A (customer 1): SELECT quantity_in_store - quantity_reserved AS available FROM inventory WHERE variant_id = 'dfbee643-4577-4e04-8b74-06770618c5f8' FOR UPDATE    -- A takes the row lock
        -> 1
-  B (customer 2): SELECT quantity_in_store - quantity_reserved AS available FROM inventory WHERE variant_id = 3 FOR UPDATE    -- B must wait
+  B (customer 2): SELECT quantity_in_store - quantity_reserved AS available FROM inventory WHERE variant_id = 'dfbee643-4577-4e04-8b74-06770618c5f8' FOR UPDATE    -- B must wait
        .. B (customer 2) is now WAITING for a lock (transactionid) held by another session
-  A (customer 1): UPDATE inventory SET quantity_reserved = quantity_reserved + 1 WHERE variant_id = 3
+  A (customer 1): UPDATE inventory SET quantity_reserved = quantity_reserved + 1 WHERE variant_id = 'dfbee643-4577-4e04-8b74-06770618c5f8'
        -> UPDATE 1
   A (customer 1): COMMIT    -- releases the lock
        -> COMMIT
@@ -100,17 +100,17 @@ Idea: Only 1 unit of variant 3 is in stock. Two customers click 'buy' at the sam
        -> 0
   B (customer 2): ROLLBACK    -- B now sees available = 0: tells customer 2 'sold out'
        -> ROLLBACK
-  A (customer 1): SELECT variant_id, quantity_in_store AS on_hand, quantity_reserved AS reserved FROM inventory WHERE variant_id = 3
-       -> 3, 1, 1
+  A (customer 1): SELECT variant_id, quantity_in_store AS on_hand, quantity_reserved AS reserved FROM inventory WHERE variant_id = 'dfbee643-4577-4e04-8b74-06770618c5f8'
+       -> dfbee643-4577-4e04-8b74-06770618c5f8, 1, 1
 
   --- S3c. FIX 2: one atomic conditional UPDATE (check and write in the same statement) ---
   A (customer 1): BEGIN
        -> BEGIN
   B (customer 2): BEGIN
        -> BEGIN
-  A (customer 1): UPDATE inventory SET quantity_reserved = quantity_reserved + 1 WHERE variant_id = 3 AND quantity_in_store - quantity_reserved >= 1 RETURNING variant_id    -- 1 row updated = success
-       -> 3
-  B (customer 2): UPDATE inventory SET quantity_reserved = quantity_reserved + 1 WHERE variant_id = 3 AND quantity_in_store - quantity_reserved >= 1 RETURNING variant_id    -- waits for A's row lock, then re-checks the WHERE clause on the new row version
+  A (customer 1): UPDATE inventory SET quantity_reserved = quantity_reserved + 1 WHERE variant_id = 'dfbee643-4577-4e04-8b74-06770618c5f8' AND quantity_in_store - quantity_reserved >= 1 RETURNING variant_id    -- 1 row updated = success
+       -> dfbee643-4577-4e04-8b74-06770618c5f8
+  B (customer 2): UPDATE inventory SET quantity_reserved = quantity_reserved + 1 WHERE variant_id = 'dfbee643-4577-4e04-8b74-06770618c5f8' AND quantity_in_store - quantity_reserved >= 1 RETURNING variant_id    -- waits for A's row lock, then re-checks the WHERE clause on the new row version
        .. B (customer 2) is now WAITING for a lock (transactionid) held by another session
   A (customer 1): COMMIT
        -> COMMIT
@@ -118,34 +118,34 @@ Idea: Only 1 unit of variant 3 is in stock. Two customers click 'buy' at the sam
        -> UPDATE 0
   B (customer 2): COMMIT
        -> COMMIT
-  A (customer 1): SELECT variant_id, quantity_in_store AS on_hand, quantity_reserved AS reserved FROM inventory WHERE variant_id = 3
-       -> 3, 1, 1
+  A (customer 1): SELECT variant_id, quantity_in_store AS on_hand, quantity_reserved AS reserved FROM inventory WHERE variant_id = 'dfbee643-4577-4e04-8b74-06770618c5f8'
+       -> dfbee643-4577-4e04-8b74-06770618c5f8, 1, 1
 
   --- S3d. FIX 3: optimistic approach: REPEATABLE READ, abort on conflict and retry ---
   A (customer 1): BEGIN ISOLATION LEVEL REPEATABLE READ
        -> BEGIN
   B (customer 2): BEGIN ISOLATION LEVEL REPEATABLE READ
        -> BEGIN
-  A (customer 1): SELECT quantity_in_store - quantity_reserved AS available, quantity_reserved FROM inventory WHERE variant_id = 3
+  A (customer 1): SELECT quantity_in_store - quantity_reserved AS available, quantity_reserved FROM inventory WHERE variant_id = 'dfbee643-4577-4e04-8b74-06770618c5f8'
        -> 1, 0
-  B (customer 2): SELECT quantity_in_store - quantity_reserved AS available, quantity_reserved FROM inventory WHERE variant_id = 3
+  B (customer 2): SELECT quantity_in_store - quantity_reserved AS available, quantity_reserved FROM inventory WHERE variant_id = 'dfbee643-4577-4e04-8b74-06770618c5f8'
        -> 1, 0
-  A (customer 1): UPDATE inventory SET quantity_reserved = 1 WHERE variant_id = 3
+  A (customer 1): UPDATE inventory SET quantity_reserved = 1 WHERE variant_id = 'dfbee643-4577-4e04-8b74-06770618c5f8'
        -> UPDATE 1
   A (customer 1): COMMIT
        -> COMMIT
-  B (customer 2): UPDATE inventory SET quantity_reserved = 1 WHERE variant_id = 3    -- row changed since B's snapshot
+  B (customer 2): UPDATE inventory SET quantity_reserved = 1 WHERE variant_id = 'dfbee643-4577-4e04-8b74-06770618c5f8'    -- row changed since B's snapshot
        -> ERROR 40001: could not serialize access due to concurrent update
   B (customer 2): ROLLBACK    -- B must roll back and retry the whole transaction
        -> ROLLBACK
   B (customer 2): BEGIN ISOLATION LEVEL REPEATABLE READ    -- retry
        -> BEGIN
-  B (customer 2): SELECT quantity_in_store - quantity_reserved AS available FROM inventory WHERE variant_id = 3    -- fresh snapshot now includes A's commit
+  B (customer 2): SELECT quantity_in_store - quantity_reserved AS available FROM inventory WHERE variant_id = 'dfbee643-4577-4e04-8b74-06770618c5f8'    -- fresh snapshot now includes A's commit
        -> 0
   B (customer 2): ROLLBACK    -- available = 0: sold out
        -> ROLLBACK
-  A (customer 1): SELECT variant_id, quantity_in_store AS on_hand, quantity_reserved AS reserved FROM inventory WHERE variant_id = 3
-       -> 3, 1, 1
+  A (customer 1): SELECT variant_id, quantity_in_store AS on_hand, quantity_reserved AS reserved FROM inventory WHERE variant_id = 'dfbee643-4577-4e04-8b74-06770618c5f8'
+       -> dfbee643-4577-4e04-8b74-06770618c5f8, 1, 1
 
 ====================================================================================================
 S4. Write skew: REPEATABLE READ is not enough, SERIALIZABLE is
@@ -162,9 +162,9 @@ Idea: Rule: the marketplace must always have at least one active seller. Sellers
   B (admin 2): SELECT count(*) AS active_sellers FROM sellers WHERE status = 'active'
        -> 2
        .. both see 2 active sellers, so each thinks suspending one is safe
-  A (admin 1): UPDATE sellers SET status = 'suspended' WHERE seller_id = 1
+  A (admin 1): UPDATE sellers SET status = 'suspended' WHERE seller_id = 'fa80071d-93fa-4b83-9b38-b4cb3c183eff'
        -> UPDATE 1
-  B (admin 2): UPDATE sellers SET status = 'suspended' WHERE seller_id = 2
+  B (admin 2): UPDATE sellers SET status = 'suspended' WHERE seller_id = '581b5806-e2b7-4e5f-b84e-3a72256615c1'
        -> UPDATE 1
   A (admin 1): COMMIT
        -> COMMIT
@@ -187,9 +187,9 @@ Idea: Rule: the marketplace must always have at least one active seller. Sellers
   B (admin 2): SELECT count(*) AS active_sellers FROM sellers WHERE status = 'active'
        -> 2
        .. both see 2 active sellers, so each thinks suspending one is safe
-  A (admin 1): UPDATE sellers SET status = 'suspended' WHERE seller_id = 1
+  A (admin 1): UPDATE sellers SET status = 'suspended' WHERE seller_id = 'fa80071d-93fa-4b83-9b38-b4cb3c183eff'
        -> UPDATE 1
-  B (admin 2): UPDATE sellers SET status = 'suspended' WHERE seller_id = 2
+  B (admin 2): UPDATE sellers SET status = 'suspended' WHERE seller_id = '581b5806-e2b7-4e5f-b84e-3a72256615c1'
        -> UPDATE 1
   A (admin 1): COMMIT
        -> COMMIT
@@ -212,13 +212,13 @@ Idea: Two stock adjustments touch the same two variants in opposite order.
        -> BEGIN
   B: BEGIN
        -> BEGIN
-  A: UPDATE inventory SET quantity_in_store = quantity_in_store - 1 WHERE variant_id = 1
+  A: UPDATE inventory SET quantity_in_store = quantity_in_store - 1 WHERE variant_id = '794c702a-beb4-4d9b-a4ce-e46393448c09'
        -> UPDATE 1
-  B: UPDATE inventory SET quantity_in_store = quantity_in_store - 1 WHERE variant_id = 2
+  B: UPDATE inventory SET quantity_in_store = quantity_in_store - 1 WHERE variant_id = '4f8a7669-5d62-4219-b083-6b7f124df422'
        -> UPDATE 1
-  A: UPDATE inventory SET quantity_in_store = quantity_in_store - 1 WHERE variant_id = 2    -- A waits for B
+  A: UPDATE inventory SET quantity_in_store = quantity_in_store - 1 WHERE variant_id = '4f8a7669-5d62-4219-b083-6b7f124df422'    -- A waits for B
        .. A is now WAITING for a lock (transactionid) held by another session
-  B: UPDATE inventory SET quantity_in_store = quantity_in_store - 1 WHERE variant_id = 1    -- B waits for A: a cycle; PostgreSQL checks after deadlock_timeout
+  B: UPDATE inventory SET quantity_in_store = quantity_in_store - 1 WHERE variant_id = '794c702a-beb4-4d9b-a4ce-e46393448c09'    -- B waits for A: a cycle; PostgreSQL checks after deadlock_timeout
        -> UPDATE 1
   A: (statement finished after the lock was released)
        -> ERROR 40P01: deadlock detected
@@ -232,22 +232,22 @@ Idea: Two stock adjustments touch the same two variants in opposite order.
        -> BEGIN
   B: BEGIN
        -> BEGIN
-  A: SELECT 1 FROM inventory WHERE variant_id IN (1, 2) ORDER BY variant_id FOR UPDATE    -- locks 1 then 2
+  A: SELECT 1 FROM inventory WHERE variant_id IN ('794c702a-beb4-4d9b-a4ce-e46393448c09', '4f8a7669-5d62-4219-b083-6b7f124df422') ORDER BY variant_id FOR UPDATE    -- locks both rows in ascending UUID order
        -> 1; 1
-  B: SELECT 1 FROM inventory WHERE variant_id IN (1, 2) ORDER BY variant_id FOR UPDATE    -- B queues behind A on variant 1
+  B: SELECT 1 FROM inventory WHERE variant_id IN ('794c702a-beb4-4d9b-a4ce-e46393448c09', '4f8a7669-5d62-4219-b083-6b7f124df422') ORDER BY variant_id FOR UPDATE    -- B queues behind A on the first UUID
        .. B is now WAITING for a lock (transactionid) held by another session
-  A: UPDATE inventory SET quantity_in_store = quantity_in_store - 1 WHERE variant_id IN (1, 2)
+  A: UPDATE inventory SET quantity_in_store = quantity_in_store - 1 WHERE variant_id IN ('794c702a-beb4-4d9b-a4ce-e46393448c09', '4f8a7669-5d62-4219-b083-6b7f124df422')
        -> UPDATE 2
   A: COMMIT
        -> COMMIT
   B: (statement finished after the lock was released)
        -> 1; 1
-  B: UPDATE inventory SET quantity_in_store = quantity_in_store - 1 WHERE variant_id IN (1, 2)
+  B: UPDATE inventory SET quantity_in_store = quantity_in_store - 1 WHERE variant_id IN ('794c702a-beb4-4d9b-a4ce-e46393448c09', '4f8a7669-5d62-4219-b083-6b7f124df422')
        -> UPDATE 2
   B: COMMIT
        -> COMMIT
-  A: SELECT variant_id, quantity_in_store FROM inventory WHERE variant_id IN (1, 2) ORDER BY 1
-       -> 1, 23; 2, 8
+  A: SELECT variant_id, quantity_in_store FROM inventory WHERE variant_id IN ('794c702a-beb4-4d9b-a4ce-e46393448c09', '4f8a7669-5d62-4219-b083-6b7f124df422') ORDER BY 1
+       -> 4f8a7669-5d62-4219-b083-6b7f124df422, 8; 794c702a-beb4-4d9b-a4ce-e46393448c09, 23
 
 ====================================================================================================
 S6. Not waiting: NOWAIT and SKIP LOCKED
@@ -257,16 +257,16 @@ Idea: Warehouse workers each pick a stock row to recount. They should not queue 
        -> BEGIN
   worker B: BEGIN
        -> BEGIN
-  worker A: SELECT variant_id FROM inventory ORDER BY variant_id LIMIT 1 FOR UPDATE    -- A locks the first row
-       -> 1
-  worker B: SELECT variant_id FROM inventory WHERE variant_id = 1 FOR UPDATE NOWAIT    -- B refuses to wait
+  worker A: SELECT variant_id FROM inventory WHERE variant_id = '794c702a-beb4-4d9b-a4ce-e46393448c09' FOR UPDATE    -- A locks the black phone stock row
+       -> 794c702a-beb4-4d9b-a4ce-e46393448c09
+  worker B: SELECT variant_id FROM inventory WHERE variant_id = '794c702a-beb4-4d9b-a4ce-e46393448c09' FOR UPDATE NOWAIT    -- B refuses to wait
        -> ERROR 55P03: could not obtain lock on row in relation "inventory"
   worker B: ROLLBACK    -- the error aborted B's transaction; start a new one
        -> ROLLBACK
   worker B: BEGIN
        -> BEGIN
-  worker B: SELECT variant_id FROM inventory ORDER BY variant_id LIMIT 1 FOR UPDATE SKIP LOCKED    -- B takes the next free row instead
-       -> 2
+  worker B: SELECT variant_id FROM inventory ORDER BY (variant_id = '794c702a-beb4-4d9b-a4ce-e46393448c09') DESC, variant_id LIMIT 1 FOR UPDATE SKIP LOCKED    -- B takes the next free row instead
+       -> 2ad24f49-d621-4d7c-a124-ae758543e76a
   worker A: COMMIT
        -> COMMIT
   worker B: COMMIT
@@ -285,5 +285,5 @@ SUMMARY
   S4 Write skew, REPEATABLE READ   RULE BROKEN: 0 active sellers left
   S4 Write skew, SERIALIZABLE      Rule kept: 1 active seller left (one transaction was aborted with 40001)
   S5a Deadlock                     Detected: session A aborted with 40P01, the other committed
-  S5b Ordered locking              No deadlock; both committed; stock 1, 23; 2, 8 (each reduced by 2)
-  S6 NOWAIT / SKIP LOCKED          NOWAIT gave an immediate error; SKIP LOCKED gave B variant 2 instead of waiting
+  S5b Ordered locking              No deadlock; both committed; stock 4f8a7669-5d62-4219-b083-6b7f124df422, 8; 794c702a-beb4-4d9b-a4ce-e46393448c09, 23 (each reduced by 2)
+  S6 NOWAIT / SKIP LOCKED          NOWAIT gave an immediate error; SKIP LOCKED gave B variant 2ad24f49-d621-4d7c-a124-ae758543e76a instead of waiting

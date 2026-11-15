@@ -1,8 +1,19 @@
+Pager usage is off.
+SET
+SET
+UPDATE 1
+UPDATE 1
+UPDATE 1
+UPDATE 1
+UPDATE 2
+DELETE 0
+DELETE 0
+DELETE 0
 === A1. ATOMICITY: checkout that fails halfway is rolled back completely ===
 Before:
- variant_id | quantity_in_store | quantity_reserved 
-------------+------------------+-------------------
-          4 |               60 |                 0
+              variant_id              | quantity_in_store | quantity_reserved 
+--------------------------------------+-------------------+-------------------
+ 2ad24f49-d621-4d7c-a124-ae758543e76a |                60 |                 0
 (1 row)
 
  test_orders 
@@ -10,6 +21,10 @@ Before:
            0
 (1 row)
 
+BEGIN
+INSERT 0 1
+INSERT 0 1
+UPDATE 1
 Inside the transaction (changes visible only to this session):
  test_orders 
 -------------
@@ -17,14 +32,15 @@ Inside the transaction (changes visible only to this session):
 (1 row)
 
 Step 4 fails: payment amount must be > 0 (chk_payments_amount)
-psql:sql/01_acid_single_session.sql:18: ERROR:  new row for relation "payments" violates check constraint "chk_payments_amount"
-DETAIL:  Failing row contains (3, 3, card, 0.00, initiated, null, null, 2026-11-14 23:17:33.478316+00).
+psql:sql/01_acid_single_session.sql:18: ERROR:  new row for relation "payments" violates check constraint "payments_amount_check"
+DETAIL:  Failing row contains (e0cf4ab2-2362-4aa8-8fbe-42c651c4b43a, de5e0a16-03f6-49e8-b55e-46c9eaa1c10e, card, pending, 0.00, null, null, 2026-11-15 21:04:37.067179+01).
 The transaction is now in an aborted state; any further statement is refused:
 psql:sql/01_acid_single_session.sql:20: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+ROLLBACK
 After ROLLBACK: nothing from steps 1-3 survived.
- variant_id | quantity_in_store | quantity_reserved 
-------------+------------------+-------------------
-          4 |               60 |                 0
+              variant_id              | quantity_in_store | quantity_reserved 
+--------------------------------------+-------------------+-------------------
+ 2ad24f49-d621-4d7c-a124-ae758543e76a |                60 |                 0
 (1 row)
 
  test_orders 
@@ -34,27 +50,47 @@ After ROLLBACK: nothing from steps 1-3 survived.
 
 
 === A2. SAVEPOINT: undo only the failed part, keep the rest ===
-psql:sql/01_acid_single_session.sql:31: ERROR:  new row for relation "payments" violates check constraint "chk_payments_amount"
-DETAIL:  Failing row contains (4, 4, card, 0.00, initiated, null, null, 2026-11-14 23:17:33.482088+00).
- order_id | status  |     method      | pay_status 
-----------+---------+-----------------+------------
-        4 | pending | pay_on_delivery | initiated
+BEGIN
+INSERT 0 1
+SAVEPOINT
+psql:sql/01_acid_single_session.sql:31: ERROR:  new row for relation "payments" violates check constraint "payments_amount_check"
+DETAIL:  Failing row contains (d68273d5-03a8-4fd0-babe-12d5325ec322, 32297605-e7f9-4fdd-b3f4-d4c867505971, card, pending, 0.00, null, null, 2026-11-15 21:04:37.072338+01).
+ROLLBACK
+INSERT 0 1
+COMMIT
+               order_id               | status  |     method      | pay_status 
+--------------------------------------+---------+-----------------+------------
+ 32297605-e7f9-4fdd-b3f4-d4c867505971 | pending | pay_on_delivery | pending
 (1 row)
 
 
 === C. CONSISTENCY: a transaction that would break a rule is refused ===
 Rule: reserved stock may never exceed stock on hand (chk_inventory_reserved).
-psql:sql/01_acid_single_session.sql:41: ERROR:  new row for relation "inventory" violates check constraint "chk_inventory_reserved"
-DETAIL:  Failing row contains (3, 1, 5, 2026-11-14 23:07:20.617275+00).
- variant_id | quantity_in_store | quantity_reserved 
-------------+------------------+-------------------
-          3 |                1 |                 0
+BEGIN
+psql:sql/01_acid_single_session.sql:41: ERROR:  new row for relation "inventory" violates check constraint "inventory_check"
+DETAIL:  Failing row contains (dfbee643-4577-4e04-8b74-06770618c5f8, 1, 5, -4).
+ROLLBACK
+              variant_id              | quantity_in_store | quantity_reserved 
+--------------------------------------+-------------------+-------------------
+ dfbee643-4577-4e04-8b74-06770618c5f8 |                 1 |                 0
 (1 row)
 
 
 === D-lite. COMMIT is permanent from the session point of view ===
- variant_id | quantity_in_store 
-------------+------------------
-          4 |               59
+BEGIN
+UPDATE 1
+COMMIT
+              variant_id              | quantity_in_store 
+--------------------------------------+-------------------
+ 2ad24f49-d621-4d7c-a124-ae758543e76a |                59
 (1 row)
 
+SET
+UPDATE 1
+UPDATE 1
+UPDATE 1
+UPDATE 1
+UPDATE 2
+DELETE 1
+DELETE 0
+DELETE 1
