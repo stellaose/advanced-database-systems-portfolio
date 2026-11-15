@@ -1,0 +1,17 @@
+{
+  "name": "advanced-database-systems-portfolio",
+  "version": "1.0.0",
+  "description": " MIT 8103 portfolio scripts (Node.js). Case study: Konga (simulated)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Stella Oseyomon",
+  "license": "ISC",
+  "dependencies": {
+    "@ladybugdb/core": "^0.22.3",
+    "mongodb": "^7.9.0",
+    "pg": "^8.23.1",
+    "redis": "^6.3.1"
+  }
+}
