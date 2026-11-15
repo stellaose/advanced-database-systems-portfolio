@@ -1,0 +1,60 @@
+=== A1. ATOMICITY: checkout that fails halfway is rolled back completely ===
+Before:
+ variant_id | quantity_in_store | quantity_reserved 
+------------+------------------+-------------------
+          4 |               60 |                 0
+(1 row)
+
+ test_orders 
+-------------
+           0
+(1 row)
+
+Inside the transaction (changes visible only to this session):
+ test_orders 
+-------------
+           1
+(1 row)
+
+Step 4 fails: payment amount must be > 0 (chk_payments_amount)
+psql:sql/01_acid_single_session.sql:18: ERROR:  new row for relation "payments" violates check constraint "chk_payments_amount"
+DETAIL:  Failing row contains (3, 3, card, 0.00, initiated, null, null, 2026-11-14 23:17:33.478316+00).
+The transaction is now in an aborted state; any further statement is refused:
+psql:sql/01_acid_single_session.sql:20: ERROR:  current transaction is aborted, commands ignored until end of transaction block
+After ROLLBACK: nothing from steps 1-3 survived.
+ variant_id | quantity_in_store | quantity_reserved 
+------------+------------------+-------------------
+          4 |               60 |                 0
+(1 row)
+
+ test_orders 
+-------------
+           0
+(1 row)
+
+
+=== A2. SAVEPOINT: undo only the failed part, keep the rest ===
+psql:sql/01_acid_single_session.sql:31: ERROR:  new row for relation "payments" violates check constraint "chk_payments_amount"
+DETAIL:  Failing row contains (4, 4, card, 0.00, initiated, null, null, 2026-11-14 23:17:33.482088+00).
+ order_id | status  |     method      | pay_status 
+----------+---------+-----------------+------------
+        4 | pending | pay_on_delivery | initiated
+(1 row)
+
+
+=== C. CONSISTENCY: a transaction that would break a rule is refused ===
+Rule: reserved stock may never exceed stock on hand (chk_inventory_reserved).
+psql:sql/01_acid_single_session.sql:41: ERROR:  new row for relation "inventory" violates check constraint "chk_inventory_reserved"
+DETAIL:  Failing row contains (3, 1, 5, 2026-11-14 23:07:20.617275+00).
+ variant_id | quantity_in_store | quantity_reserved 
+------------+------------------+-------------------
+          3 |                1 |                 0
+(1 row)
+
+
+=== D-lite. COMMIT is permanent from the session point of view ===
+ variant_id | quantity_in_store 
+------------+------------------
+          4 |               59
+(1 row)
+

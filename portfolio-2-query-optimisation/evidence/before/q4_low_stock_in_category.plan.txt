@@ -1,27 +1,27 @@
-Sort  (cost=2188.81..2188.94 rows=51 width=43) (actual time=10.968..10.973 rows=54 loops=1)
-  Sort Key: i.quantity_on_hand, p.product_id
-  Sort Method: quicksort  Memory: 28kB
-  Buffers: shared hit=4298
-  ->  Nested Loop  (cost=642.05..2187.36 rows=51 width=43) (actual time=2.432..10.928 rows=54 loops=1)
-        Buffers: shared hit=4292
-        ->  Hash Join  (cost=641.76..1788.03 rows=1152 width=47) (actual time=1.998..8.955 rows=1147 loops=1)
-              Hash Cond: (v.product_id = p.product_id)
-              Buffers: shared hit=851
-              ->  Seq Scan on product_variants v  (cost=0.00..1015.00 rows=50000 width=27) (actual time=0.005..3.164 rows=50000 loops=1)
-                    Buffers: shared hit=515
-              ->  Hash  (cost=636.00..636.00 rows=461 width=28) (actual time=1.980..1.981 rows=456 loops=1)
-                    Buckets: 1024  Batches: 1  Memory Usage: 35kB
-                    Buffers: shared hit=336
-                    ->  Seq Scan on products p  (cost=0.00..636.00 rows=461 width=28) (actual time=0.008..1.908 rows=456 loops=1)
-                          Filter: ((category_id = 25) AND ((status)::text = 'live'::text))
+Sort  (cost=2994.24..2994.36 rows=48 width=72) (actual time=25.376..25.380 rows=54 loops=1)
+  Sort Key: i.quantity_in_store, p.product_id
+  Sort Method: quicksort  Memory: 31kB
+  Buffers: shared hit=5981
+  ->  Nested Loop  (cost=929.18..2992.90 rows=48 width=72) (actual time=3.726..25.274 rows=54 loops=1)
+        Buffers: shared hit=5981
+        ->  Hash Join  (cost=928.76..2330.03 rows=1152 width=105) (actual time=2.464..9.634 rows=1147 loops=1)
+              Hash Cond: ((v.product_id)::text = (p.product_id)::text)
+              Buffers: shared hit=1393
+              ->  Seq Scan on product_variants v  (cost=0.00..1270.00 rows=50000 width=85) (actual time=0.002..2.056 rows=50000 loops=1)
+                    Buffers: shared hit=770
+              ->  Hash  (cost=923.00..923.00 rows=461 width=57) (actual time=2.456..2.456 rows=456 loops=1)
+                    Buckets: 1024  Batches: 1  Memory Usage: 48kB
+                    Buffers: shared hit=623
+                    ->  Seq Scan on products p  (cost=0.00..923.00 rows=461 width=57) (actual time=0.004..2.402 rows=456 loops=1)
+                          Filter: (((category_id)::text = '00000004-0000-4000-8000-000000000025'::text) AND ((status)::text = 'live'::text))
                           Rows Removed by Filter: 19544
-                          Buffers: shared hit=336
-        ->  Index Scan using inventory_pkey on inventory i  (cost=0.29..0.35 rows=1 width=12) (actual time=0.002..0.002 rows=0 loops=1147)
-              Index Cond: (variant_id = v.variant_id)
-              Filter: (quantity_on_hand < 10)
+                          Buffers: shared hit=623
+        ->  Index Scan using inventory_pkey on inventory i  (cost=0.41..0.58 rows=1 width=41) (actual time=0.013..0.013 rows=0 loops=1147)
+              Index Cond: ((variant_id)::text = (v.variant_id)::text)
+              Filter: (quantity_in_store < 10)
               Rows Removed by Filter: 1
-              Buffers: shared hit=3441
+              Buffers: shared hit=4588
 Planning:
-  Buffers: shared hit=201
-Planning Time: 0.567 ms
-Execution Time: 11.022 ms
+  Buffers: shared hit=28
+Planning Time: 0.290 ms
+Execution Time: 25.407 ms

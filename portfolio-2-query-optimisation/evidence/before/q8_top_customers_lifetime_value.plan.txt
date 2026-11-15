@@ -1,26 +1,26 @@
-Limit  (cost=7571.56..7571.59 rows=10 width=62) (actual time=131.124..131.130 rows=10 loops=1)
-  Buffers: shared hit=3279, temp read=75 written=142
-  ->  Sort  (cost=7571.56..7621.56 rows=20000 width=62) (actual time=131.122..131.126 rows=10 loops=1)
-        Sort Key: (sum(o.total_amount)) DESC
-        Sort Method: top-N heapsort  Memory: 26kB
-        Buffers: shared hit=3279, temp read=75 written=142
-        ->  HashAggregate  (cost=6889.37..7139.37 rows=20000 width=62) (actual time=117.520..126.208 rows=19979 loops=1)
+Limit  (cost=10555.47..10555.50 rows=10 width=91) (actual time=91.339..91.341 rows=10 loops=1)
+  Buffers: shared hit=5619 read=1019, temp read=202 written=363
+  ->  Sort  (cost=10555.47..10605.47 rows=20000 width=91) (actual time=91.338..91.339 rows=10 loops=1)
+        Sort Key: (sum(o.total_amount)) DESC, c.customer_id
+        Sort Method: top-N heapsort  Memory: 27kB
+        Buffers: shared hit=5619 read=1019, temp read=202 written=363
+        ->  HashAggregate  (cost=9873.28..10123.28 rows=20000 width=91) (actual time=76.807..87.969 rows=19793 loops=1)
               Group Key: c.customer_id
-              Batches: 5  Memory Usage: 8241kB  Disk Usage: 720kB
-              Buffers: shared hit=3276, temp read=75 written=142
-              ->  Hash Join  (cost=777.00..5935.07 rows=127240 width=30) (actual time=6.579..58.637 rows=127305 loops=1)
-                    Hash Cond: (o.customer_id = c.customer_id)
-                    Buffers: shared hit=3276
-                    ->  Seq Scan on orders o  (cost=0.00..4824.00 rows=127240 width=16) (actual time=1.286..23.020 rows=127305 loops=1)
-                          Filter: ((status)::text <> ALL ('{cancelled,returned}'::text[]))
-                          Rows Removed by Filter: 22695
-                          Buffers: shared hit=2949
-                    ->  Hash  (cost=527.00..527.00 rows=20000 width=22) (actual time=5.132..5.133 rows=20000 loops=1)
-                          Buckets: 32768  Batches: 1  Memory Usage: 1320kB
-                          Buffers: shared hit=327
-                          ->  Seq Scan on customers c  (cost=0.00..527.00 rows=20000 width=22) (actual time=0.006..1.894 rows=20000 loops=1)
-                                Buffers: shared hit=327
+              Batches: 5  Memory Usage: 8241kB  Disk Usage: 1736kB
+              Buffers: shared hit=5619 read=1019, temp read=202 written=363
+              ->  Hash Join  (cost=835.00..9199.03 rows=89900 width=59) (actual time=4.812..44.934 rows=89747 loops=1)
+                    Hash Cond: ((o.customer_id)::text = (c.customer_id)::text)
+                    Buffers: shared hit=5619 read=1019
+                    ->  Seq Scan on orders o  (cost=0.00..8128.00 rows=89900 width=45) (actual time=0.960..19.287 rows=89747 loops=1)
+                          Filter: ((status)::text = 'delivered'::text)
+                          Rows Removed by Filter: 60253
+                          Buffers: shared hit=5234 read=1019
+                    ->  Hash  (cost=585.00..585.00 rows=20000 width=51) (actual time=3.841..3.841 rows=20000 loops=1)
+                          Buckets: 32768  Batches: 1  Memory Usage: 1886kB
+                          Buffers: shared hit=385
+                          ->  Seq Scan on customers c  (cost=0.00..585.00 rows=20000 width=51) (actual time=0.003..1.602 rows=20000 loops=1)
+                                Buffers: shared hit=385
 Planning:
-  Buffers: shared hit=223
-Planning Time: 0.590 ms
-Execution Time: 131.672 ms
+  Buffers: shared hit=9
+Planning Time: 0.247 ms
+Execution Time: 92.407 ms

@@ -1,3 +1,4 @@
+BEGIN;
 SET LOCAL search_path TO konga;
 
 INSERT INTO customers (customer_id, email_address, phone_number, full_name, password_hash, is_active, created_at) VALUES

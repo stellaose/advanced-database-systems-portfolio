@@ -4,9 +4,9 @@ Query: `SELECT payment_id, amount, created_at FROM exp.p4 WHERE method = 'card' 
 
 | Index | Access path | Sort step needed | Index size | Buffers hit | Median ms |
 |---|---|---|---|---|---|
-| 1. no index (heap scan) | Parallel Seq Scan | yes | - | 6827 | 13.781 |
-| 2. single-column B-tree (method) | Bitmap Heap Scan, Index Scan | yes | 1040 kB | 5046 | 9.515 |
-| 3. hash index (method) | Bitmap Heap Scan, Index Scan | yes | 7056 kB | 5286 | 10.602 |
-| 4. multi-column B-tree (method, status, created_at DESC) | Index Scan | no | 7848 kB | 46 | 0.024 |
-| 5. covering (same keys + INCLUDE payment_id, amount) | Index Only Scan | no | 12 MB | 8 | 0.015 |
+| 1. no index (heap scan) | Parallel Seq Scan | yes | - | 2720 | 11.808 |
+| 2. single-column B-tree (method) | Bitmap Heap Scan, Index Scan | yes | 1040 kB | 2696 | 9.289 |
+| 3. hash index (method) | Bitmap Heap Scan, Index Scan | yes | 7056 kB | 2756 | 10.877 |
+| 4. multi-column B-tree (method, status, created_at DESC) | Index Scan | no | 7456 kB | 23 | 0.015 |
+| 5. covering (same keys + INCLUDE payment_id, amount) | Index Only Scan | no | 15 MB | 4 | 0.014 |
 

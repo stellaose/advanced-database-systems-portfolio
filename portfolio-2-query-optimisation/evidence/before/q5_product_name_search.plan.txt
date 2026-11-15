@@ -1,8 +1,6 @@
-Seq Scan on products  (cost=0.00..586.00 rows=2 width=33) (actual time=5.356..8.609 rows=1 loops=1)
+Seq Scan on products  (cost=0.00..873.00 rows=2 width=62) (actual time=5.942..9.736 rows=1 loops=1)
   Filter: ((name)::text ~~* '%laptop 1234%'::text)
   Rows Removed by Filter: 19999
-  Buffers: shared hit=336
-Planning:
-  Buffers: shared hit=57
-Planning Time: 0.241 ms
-Execution Time: 8.639 ms
+  Buffers: shared hit=623
+Planning Time: 0.097 ms
+Execution Time: 9.747 ms

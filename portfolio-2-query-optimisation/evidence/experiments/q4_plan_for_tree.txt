@@ -1,7 +1,7 @@
                                                 QUERY PLAN                                                 
 -----------------------------------------------------------------------------------------------------------
  Sort (actual rows=54 loops=1)
-   Sort Key: i.quantity_on_hand, p.product_id
+   Sort Key: i.quantity_in_store, p.product_id
    Sort Method: quicksort  Memory: 28kB
    ->  Hash Join (actual rows=54 loops=1)
          Hash Cond: (v.variant_id = i.variant_id)

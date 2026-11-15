@@ -1,4 +1,4 @@
--- Q3: Monthly revenue for one seller (SellerHQ report), delivered orders only.
+-- Q3: Monthly revenue for one seller 
 SELECT date_trunc('month', o.placed_at) AS month,
        count(DISTINCT o.order_id)        AS orders,
        sum(oi.quantity * oi.unit_price)  AS revenue

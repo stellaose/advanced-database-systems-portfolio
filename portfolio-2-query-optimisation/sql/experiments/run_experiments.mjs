@@ -91,7 +91,7 @@ await run("ANALYZE exp.ostat");
 // ---------------------------------------------------------------------------
 {
   const rows = [];
-  for (const [selLabel, bound] of [["selective (customer_id < 300, about 1.5% of orders)", 300], ["broad (customer_id < 15000, about 75% of orders)", 15000]]) {
+  for (const [selLabel, bound] of [["selective (UUID customer suffix below 000000000300, about 1.5% of orders)", 300], ["broad (UUID customer suffix below 000000015000, about 75% of orders)", 15000]]) {
     const sql = `SELECT o.order_id, sum(oi.quantity * oi.unit_price) FROM konga.orders o JOIN konga.order_items oi ON oi.order_id = o.order_id WHERE o.customer_id < '00000001-0000-4000-8000-${String(bound).padStart(12, '0')}' GROUP BY o.order_id`;
     for (const [algo, settings] of [["optimiser's choice", {}], ["force hash join", { enable_nestloop: "off", enable_mergejoin: "off" }],
                                     ["force merge join", { enable_nestloop: "off", enable_hashjoin: "off" }], ["force nested loop", { enable_hashjoin: "off", enable_mergejoin: "off" }]]) {

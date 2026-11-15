@@ -1,27 +1,26 @@
 -- E2b join + GROUP BY (rewritten)
--- SELECT o.order_id, sum(i.quantity * i.unit_price) AS total FROM konga.orders o LEFT JOIN konga.order_items i ON i.order_id = o.order_id WHERE o.customer_id < 3000 GROUP BY o.order_id
+-- SELECT o.order_id, sum(i.quantity * i.unit_price) AS total FROM konga.orders o LEFT JOIN konga.order_items i ON i.order_id = o.order_id WHERE o.customer_id < '00000001-0000-4000-8000-000000003000' GROUP BY o.order_id
 
-HashAggregate  (cost=14110.79..14386.90 rows=22089 width=40) (actual time=101.912..112.949 rows=22316 loops=1)
+HashAggregate  (cost=22743.37..23023.58 rows=22417 width=69) (actual time=131.019..142.627 rows=22316 loops=1)
   Group Key: o.order_id
-  Batches: 5  Memory Usage: 8241kB  Disk Usage: 656kB
-  Buffers: shared hit=5386, temp read=44 written=113
-  I/O Timings: temp read=0.056 write=0.303
-  ->  Hash Right Join  (cost=4016.83..13448.12 rows=66267 width=20) (actual time=7.769..78.864 rows=66957 loops=1)
-        Hash Cond: (i.order_id = o.order_id)
-        Buffers: shared hit=5386
-        ->  Seq Scan on order_items i  (cost=0.00..8250.00 rows=450000 width=20) (actual time=0.008..25.991 rows=450000 loops=1)
-              Buffers: shared hit=3750
-        ->  Hash  (cost=3740.72..3740.72 rows=22089 width=8) (actual time=7.744..7.745 rows=22316 loops=1)
-              Buckets: 32768  Batches: 1  Memory Usage: 1128kB
-              Buffers: shared hit=1636
-              ->  Bitmap Heap Scan on orders o  (cost=515.61..3740.72 rows=22089 width=8) (actual time=1.086..5.456 rows=22316 loops=1)
-                    Recheck Cond: (customer_id < 3000)
-                    Heap Blocks: exact=1548
-                    Buffers: shared hit=1636
-                    ->  Bitmap Index Scan on idx_orders_customer_placed  (cost=0.00..510.09 rows=22089 width=0) (actual time=0.926..0.926 rows=22316 loops=1)
-                          Index Cond: (customer_id < 3000)
-                          Buffers: shared hit=88
+  Batches: 5  Memory Usage: 8241kB  Disk Usage: 1656kB
+  Buffers: shared hit=10976 read=1054, temp read=161 written=323
+  ->  Hash Right Join  (cost=7735.58..22070.86 rows=67251 width=49) (actual time=24.367..107.593 rows=66957 loops=1)
+        Hash Cond: ((i.order_id)::text = (o.order_id)::text)
+        Buffers: shared hit=10976 read=1054
+        ->  Seq Scan on order_items i  (cost=0.00..13154.00 rows=450000 width=49) (actual time=0.008..25.435 rows=450000 loops=1)
+              Buffers: shared hit=7600 read=1054
+        ->  Hash  (cost=7455.36..7455.36 rows=22417 width=37) (actual time=24.350..24.351 rows=22316 loops=1)
+              Buckets: 32768  Batches: 1  Memory Usage: 1760kB
+              Buffers: shared hit=3376
+              ->  Bitmap Heap Scan on orders o  (cost=922.15..7455.36 rows=22417 width=37) (actual time=17.122..21.907 rows=22316 loops=1)
+                    Recheck Cond: ((customer_id)::text < '00000001-0000-4000-8000-000000003000'::text)
+                    Heap Blocks: exact=3191
+                    Buffers: shared hit=3376
+                    ->  Bitmap Index Scan on idx_orders_customer_placed  (cost=0.00..916.55 rows=22417 width=0) (actual time=16.818..16.818 rows=22316 loops=1)
+                          Index Cond: ((customer_id)::text < '00000001-0000-4000-8000-000000003000'::text)
+                          Buffers: shared hit=185
 Planning:
   Buffers: shared hit=16
-Planning Time: 0.201 ms
-Execution Time: 113.939 ms
+Planning Time: 0.276 ms
+Execution Time: 145.036 ms

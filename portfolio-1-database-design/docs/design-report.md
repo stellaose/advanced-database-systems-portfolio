@@ -1,6 +1,6 @@
 # Konga: Database design report (Portfolio 1)
 
-This report shows how the database for a simulated marketplace based on how Konga is designed. It follows the seven database design stages from Study Session 1, meaning from requirement analysis (particularly identifying user needs) to planning maintenance. The [case study](case-study.md) document provides as much background and scope as possible.
+This report explains how the database was designed for a simulated marketplace based on Konga. It follows the seven stages from Study Session 1, starting with user needs and ending with a maintenance plan. Each stage builds on the decisions made before it. The [case study](case-study.md) gives the background and scope.
 
 ## Contents
 
@@ -11,7 +11,6 @@ This report shows how the database for a simulated marketplace based on how Kong
 5. [Stage 5: Implementation](#stage-5-implementation)
 6. [Stage 6: Testing and evaluation](#stage-6-testing-and-evaluation)
 7. [Stage 7: Deployment and maintenance](#stage-7-deployment-and-maintenance)
-
 
 **Supporting documents**
 
@@ -27,9 +26,10 @@ This report shows how the database for a simulated marketplace based on how Kong
 *Study Session 1(stage 1): identify the purpose of the database, user requirements and data needs, key entities/attributes/relationships, and functional and non-functional requirements.*
 
 ### Purpose
-The database supports a simulated marketplace where several sellers can list products. Customers browse the catalogue, place orders and make payments. Konga logistics or the seller as the case maybe  handles delivery, and sellers receive payouts for their sales.
 
-#### Please note: that every data here is not real, and the design does not depict Konga's actual database.
+The database supports a simulated marketplace where several sellers can list products. Customers browse the catalogue, place orders and make payments. Either Konga logistics or the seller handles delivery, and sellers receive payouts for their sales.
+
+All data in this project is synthetic. The design is an academic model and does not describe Konga's actual database. Stock is tracked in one warehouse, with at most one shipment per seller for each order.
 
 ### Users and what they need
 
@@ -43,14 +43,15 @@ The database supports a simulated marketplace where several sellers can list pro
 | Analyst | Aggregated sales and stock figures without personal data |
 
 ### Functional requirements
-1. Register customers and store multiple delivery addresses, with one address set as the default address for a customer.
+
+1. Register customers and store multiple delivery addresses, with at most one address marked as the default for each customer.
 2. Allow sellers to create products with variants (product variations), each with a unique Stock Keeping Unit (SKU) and a price. Organise products by category and optional brand; categories can also have subcategories.
-3. Track stock per variant (product variation); never allow negative stock or reserve more than that which is available.
+3. Track stock per variant (product variation); stock must not be negative, and reserved stock must not exceed stock on hand.
 4. Allow each customer at most one open cart. At checkout, create an order from its items, store the quantity and purchase price of each variant (product variation), and mark the cart as checked out.
 5. Allow an order to include items from several sellers, with at most one shipment per seller for that order.
 6. Record payments (card, wallet, bank transfer, pay on delivery) and refunds.
 7. Record shipment status and tracking events.
-8. Allow each customer to review a product only once, with a rating ranging from. 1 - 5, and an optional comment.
+8. Allow each customer to review a product only once, with a rating between 1 and 5 and an optional comment.
 9. Record seller payouts for a defined period, including gross sales, commission, net amount and payment status.
 10. Support percentage and fixed-amount coupons with validity periods, and allow at most one coupon per order.
 
@@ -64,10 +65,10 @@ The database supports a simulated marketplace where several sellers can list pro
 | Scalability / availability | Partitioning and replication (Portfolio 5), NoSQL for flexible data (Portfolio 4) |
 | Backup and recovery | Verify backup and restoration using `pg_dump` and a restore test; see [backup and restore evidence](../evidence/backup-restore-test.txt) |
 
-These requirements guide the work across the portfolios. 
-The schema enforces rules such as valid prices and unique email addresses. Operations such as checkout and stock reservation need transaction logic because several changes must succeed together. The later stages and portfolios cover indexing, access control, replication and recovery.
+These requirements guide the work across the portfolios. The schema enforces rules such as valid prices and unique email addresses. Operations such as checkout and stock reservation need transaction logic because several changes must succeed together. The later stages and portfolios cover indexing, access control, replication and recovery.
 
 ### Entities identified
+
 The main conceptual entities are Customer, Address, Seller, Category, Brand, Product, Variant (product variation), Inventory, Cart, Coupon, Order, Payment, Refund, Shipment, ShipmentEvent, Review and Payout.
 
 Cart–Variant (product variation) and Order–Variant (product variation) are **many-to-many relationships**: a cart or order can contain several variants (product variations), and a variant (product variation) can appear in several carts or orders. These relationships have their own attributes:
@@ -80,14 +81,15 @@ The quantity belongs to a particular cart or order. For example, one cart may co
 The [conceptual design](#stage-2-conceptual-design-entity-relationship-model) shows the entities and relationships, and the [logical design](#stage-3-logical-design-relational-schema) gives the full attribute and table definitions.
 
 ### Business rules (to be enforced in the database where possible)
+
 1. Variant (product variation) prices, purchase prices and order totals must be non-negative. Cart and order item quantities must be positive; review ratings must be between 1 and 5.
-2. Stock on hand and reserved stock must be positive, and reserved stock must not exceed stock available.
+2. Stock on hand and reserved stock must be non-negative, and reserved stock must not exceed stock on hand.
 3. Each variant (product variation) has a unique SKU. A variant (product variation) can occur only once in a particular cart or order; its quantity records multiple units.
-4. Each customer can have only one default address and  one open cart. These limits do not require a customer to have either.
+4. Each customer can have at most one default address and at most one open cart. A customer does not have to have either.
 5. A coupon's end date must be after its start date. Its discount value must be positive, and a percentage discount must not exceed 100%.
 6. A successful payment must have a payment date. Payment and refund amounts must be positive.
-7. Each customer can submit only one review per product, and each order can have at one shipment per seller.
-8. A payout period must end on or after its start date. Gross sales and commission must be positive, net amount must equal gross sales minus commission, and each seller can have only one payout for the same start and end dates.
+7. Each customer can submit only one review per product, and each order can have at most one shipment per seller.
+8. A payout period must end on or after its start date. Gross sales and commission must be non-negative, net amount must equal gross sales minus commission, and each seller can have only one payout for the same start and end dates.
 
 [Back to contents](#contents)
 
@@ -95,7 +97,9 @@ The [conceptual design](#stage-2-conceptual-design-entity-relationship-model) sh
 
 _Study Session 1 (stage 2): develop a model that describes the data independently of a particular database system. Identify the entities, attributes, relationships, keys and cardinalities using an entity–relationship (ER) diagram._
 
-I used **Chen notation** for the conceptual diagram, following the study session:
+The requirements identify what the database needs to do. The conceptual model brings those requirements together by showing the entities and their relationships.
+
+The following symbols describe **Chen notation**, as introduced in the study session:
 
 - A **rectangle** represents an entity.
 - An **ellipse** represents an attribute; an underlined attribute identifies a key.
@@ -111,9 +115,9 @@ The [generation script](diagrams/make_er_chen.py) creates the Graphviz diagram s
 
 - **Products and variants (product variations).** A Product describes the general item. A Variant (product variation) describes the version a customer can buy, such as a particular colour, size or storage capacity. Each variant (product variation) has its own SKU, price and stock record, so carts and orders can identify exactly which version the customer selected.
 - **Many-to-many relationships with attributes.** The CONTAINS relationship between Order and Variant (product variation) has `quantity` and `unit_price` attributes. The IN_CART relationship between Cart and Variant (product variation) has a `quantity` attribute. These attributes describe how a product variation appears in a particular order or cart. The logical design stores them in the OrderItem and CartItem associative entities, implemented as `order_items` and `cart_items`.
-- **Derived attributes.** Dashed ellipses identify values calculated from other data: `Order.total_amount` is based on the order items and any applicable discount; `Inventory.available_qty` is stock on hand minus reserved stock; and `Payout.net_amount` is gross sales minus commission. The schema stores the order total and net payout amount, while available stock is calculated when needed. See [controlled denormalisation](normalisation.md#5-deliberate-exceptions-controlled-denormalisation) for the reasons behind these choices.
-- **Recursive relationship.** The PARENT_OF relationship connects Category to itself, allowing a category to contain subcategories. Each category has only one parent and can have several children.
-- **One-to-one relationship.** The STOCKED_AS relationship links Variant (product variation) to Inventory. Each variant (product variation) should have one stock record. This record is separate because stock changes independently of product descriptions and prices. Using the same column as both a primary key and a foreign key prevents a variant (product variation) from having more than one inventory record. The insertion logic must still ensure that a record is created for every variant (product variation).
+- **Derived attributes.** Dashed ellipses identify values calculated from other data: `Order.total_amount` is based on the order items and any applicable discount; `Inventory.available_qty` is stock on hand minus reserved stock; and `Payout.net_amount` is gross sales minus commission. The schema stores the order total and net payout amount, and the database calculates available stock in a generated column. See [controlled denormalisation](normalisation.md#5-deliberate-exceptions-controlled-denormalisation) for the reasons behind these choices.
+- **Recursive relationship.** The PARENT_OF relationship connects Category to itself, allowing a category to contain subcategories. Each category can have at most one parent and several children. A top-level category has no parent.
+- **One-to-one relationship.** The STOCKED_AS relationship links Variant (product variation) to Inventory. Each variant (product variation) should have one stock record. This record is separate because stock changes independently of product descriptions and prices. Using the same column as both a primary key and a foreign key prevents a variant (product variation) from having more than one inventory record. An insertion trigger creates the stock record for each new variant (product variation), and a deferred check prevents it from being removed while the product variation still exists.
 - **Multiple values and composite information.** A customer may have several addresses, and a shipment may have several tracking events. Separate Address and ShipmentEvent entities store these records. Address details are split into fields such as `line1`, `city`, `state` and `postal_code`. This avoids repeating groups and supports atomic column values in the relational design, consistent with first normal form (1NF).
 - **Existence-dependent entities.** A ShipmentEvent belongs to a Shipment and cannot exist without it. It has its own identifier, `event_id`, so it is not modelled as a weak entity identified through its owner's key. The foreign key enforces the dependency, and deleting a shipment also deletes its tracking events.
 
@@ -125,13 +129,14 @@ The diagram below shows how the design translates into tables. It uses **crow’
 
 [Back to contents](#contents)
 
-
-
 ## Stage 3: Logical design (relational schema)
 
 *Study Session 1 (stage 3): convert the E-R Diagram to a relational schema (tables, columns, relationships), define primary/foreign keys and constraints, normalise, and ensure integrity and consistency.*
 
+The logical design turns the conceptual model into tables. Keys identify individual records, foreign keys connect them, and constraints enforce the business rules.
+
 ### Mapping rules applied (ER -> relational)
+
 | ER construct | Relational result | Example |
 |---|---|---|
 | Entity | One table, key attribute -> primary key | Customer -> `customers(customer_id PK)` |
@@ -139,14 +144,15 @@ The diagram below shows how the design translates into tables. It uses **crow’
 | M:N relationship (with attributes) | Table with a composite key or FK pair plus the relationship's attributes | CONTAINS -> `order_items(order_id, variant_id, quantity, unit_price)` |
 | 1:1 relationship | Shared primary key | `inventory.variant_id` is both PK and FK to `product_variants` |
 | Recursive relationship | Self-referencing FK | `categories.parent_id -> categories.category_id` |
-| Derived attribute | Omitted, or stored deliberately and protected by a CHECK | `payouts.net_amount` with `CHECK (net = gross - commission)` |
+| Derived attribute | Omitted, or stored deliberately and protected by a CHECK | `payouts.net_amount` as a generated `gross_sales - commission` value |
 
 The complete PostgreSQL schema contains 19 tables and is defined in [01_schema.sql](../sql/01_schema.sql).
 
 ### Data dictionary (summary)
+
 | Table | Primary key | Foreign keys | Notable constraints |
 |---|---|---|---|
-| customers | customer_id | | UNIQUE(email)_address; email address format CHECK |
+| customers | customer_id | | UNIQUE(email_address); email address format CHECK |
 | addresses | address_id | customer_id | one default per customer (partial unique index) |
 | sellers | seller_id | | UNIQUE(email_address); status IN (...); commission 0-50 |
 | categories | category_id | parent_id (self) | UNIQUE(slug); not its own parent |
@@ -167,9 +173,11 @@ The complete PostgreSQL schema contains 19 tables and is defined in [01_schema.s
 | payouts | payout_id | seller_id | net = gross - commission; UNIQUE(seller, period) |
 
 ### Normalisation
+
 The [normalisation walkthrough](normalisation.md) starts with a flat order sheet and takes it through 1NF, 2NF, 3NF and BCNF. It follows the approach used in the study session's student/course/instructor example and explains the reasons for the deliberate exceptions.
 
 ### Referential actions
+
 I used `ON DELETE CASCADE` for dependent records such as addresses, cart items, shipment events and reviews. For master and history tables, the default restrictive behaviour protects related data. For example, a category or seller cannot be deleted while other records still reference it. Test T11 in `evidence/constraint-tests-output.txt` checks this behaviour.
 
 [Back to contents](#contents)
@@ -181,7 +189,7 @@ I used `ON DELETE CASCADE` for dependent records such as addresses, cart items, 
 | Decision | Choice | Why | Where |
 |---|---|---|---|
 | DBMS | PostgreSQL 16 | Open source RDBMS with full ACID support, rich index types, partitioning, replication, JSON support | all portfolios |
-| Data types | `BIGINT IDENTITY` keys, `NUMERIC(12,2)` money, `TIMESTAMPTZ`, `VARCHAR` with limits | Exact money arithmetic, time zones, bounded text | `01_schema.sql` |
+| Data types | UUIDs stored as `VARCHAR(36)` keys, `NUMERIC(12,2)` money, `TIMESTAMPTZ`, `VARCHAR` with limits | Exact money arithmetic, time zones, bounded text | `01_schema.sql` |
 | Storage / file organisation | Heap tables with B-tree primary-key indexes by default | PostgreSQL's native organisation; alternatives are examined in Portfolio 2 | Portfolio 2 |
 | Indexing strategy | Created after measuring real queries: composite, partial, trigram GIN | Indexes speed reads but slow writes, so only where plans show a benefit | `portfolio-2/.../03_indexes.sql` |
 | Partitions | Horizontal partitioning of large tables by region/date | Supports scale and distribution | Portfolio 5 |
@@ -189,7 +197,10 @@ I used `ON DELETE CASCADE` for dependent records such as addresses, cart items, 
 | Security policy | Three least-privilege roles; column-level grant hides `password_hash` | Confidentiality (CIA triad, Session 3, 3.2.2.1) | `../sql/04_physical_design.sql` |
 | Backup | `pg_dump` custom format + `pg_restore`; tested | Backup and recovery characteristic | `../evidence/backup-restore-test.txt` |
 
+Each role has permissions suited to the work it needs to do. This keeps routine application access separate from support and reporting access.
+
 ### Roles
+
 | Role | Can | Cannot |
 |---|---|---|
 | `konga_app` | SELECT/INSERT/UPDATE/DELETE on all tables | Run DDL (create/drop tables) |
@@ -200,7 +211,7 @@ I used `ON DELETE CASCADE` for dependent records such as addresses, cart items, 
 
 ## Stage 5: Implementation
 
-The study material lists stages 1–4 and then moves to stages 6–7. In this report, I use stage 5 for implementation: creating the database, loading sample data and applying the views and access permissions before testing.
+Implementation puts the design into practice by creating the tables, loading sample data and applying views and permissions. The study material moves from stages 1–4 to stages 6–7, so this report uses stage 5 for the work between design and testing.
 
 | Step | Script |
 |---|---|
@@ -231,7 +242,10 @@ All data used here is synthetic. The portfolio README explains which order to ru
 
 *Study Session 1, 1.1.2 (stage 7): monitoring and optimising queries, applying updates/patches, backups and disaster recovery, modifying the database as business needs evolve.*
 
+Once the database is in use, it needs regular monitoring, backups and security reviews. The plan below describes how that work would be organised.
+
 ### Routine maintenance plan
+
 | Task | How (PostgreSQL) | Frequency |
 |---|---|---|
 | Refresh optimiser statistics | `ANALYZE` (autovacuum does this automatically; run manually after bulk loads) | After bulk loads |
@@ -243,6 +257,7 @@ All data used here is synthetic. The portfolio README explains which order to ru
 | Security | Review role grants; rotate credentials; patch PostgreSQL minor versions | Quarterly |
 
 ### Schema evolution
+
 Future schema changes would use versioned migration scripts, such as `ALTER TABLE ...`, committed to Git. For example, extending this model to support a second warehouse would require changes to `inventory`, including a `warehouse_id`. This would address the single-warehouse limitation noted in the README.
 
 ### Monitoring queries

@@ -1,15 +1,8 @@
--- =====================================================================
--- Portfolio 2: synthetic data at realistic scale (Konga simulation)
--- Requires the schema from portfolio-1-database-design/sql/01_schema.sql.
--- Wipes the small Portfolio 1 sample data first. Stable IDs; seeded random data relative to the load time.
--- Approx. rows: customers 20k, addresses 30k, products 20k, variants 50k,
---   orders 150k, order_items ~450k, payments 150k, shipments up to ~450k, reviews 60k
--- =====================================================================
+
 \set ON_ERROR_STOP on
 BEGIN;
 SET LOCAL search_path TO konga;
 
--- Stable UUID-shaped text IDs, with a separate namespace for each entity.
 CREATE FUNCTION pg_temp.seed_id(kind INTEGER, n BIGINT) RETURNS VARCHAR(36)
 LANGUAGE SQL IMMUTABLE STRICT AS $$
     SELECT lpad(kind::text, 8, '0') || '-0000-4000-8000-' || lpad(n::text, 12, '0');

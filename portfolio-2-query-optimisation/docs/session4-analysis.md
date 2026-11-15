@@ -1,164 +1,72 @@
-# Query processing and optimisation: analysis against Study Session 4
+# Query processing and optimisation: Study Session 4
 
-> Historical analysis: these measurements and diagrams come from the earlier integer-ID schema. The current SQL uses UUID-as-text IDs and `quantity_in_store`. Rerun the updated scripts before using these timings as evidence for the current design. Buffer totals from the earlier experiment harness may include double-counted child-node buffers; the updated harness reads the root counter.
+These results were collected on 15 November 2026 using the UUID-based marketplace schema from [Portfolio 1](../../portfolio-1-database-design/docs/design-report.md). The experiment runner completed E1–E7 and E9, and pgbench completed E8 on PostgreSQL 15.14. The reports in `evidence/experiments/` contain the detailed tables and saved plans. The main Q1–Q8 before/after comparison is discussed separately in [performance-analysis.md](performance-analysis.md).
 
-All numbers come from runs on the Konga database (PostgreSQL 16, 1.5 million rows in total, 2 CPU cores, shared sandbox). Each timing is the median of 3 to 5 timed runs after one warm-up, from `EXPLAIN (ANALYZE, BUFFERS)`. Timings on this machine vary by roughly 20 to 30 per cent between runs, so only large differences are treated as findings. Raw tables are in `evidence/experiments/`, and every SQL statement the harness ran is logged in `evidence/experiments/executed-sql.sql`.
+## 1. Processing a query
 
-## 1. How a query is processed (4.1.1)
+PostgreSQL parses the query, checks its tables and columns, applies rewrites, compares estimated plan costs and executes the chosen plan. `EXPLAIN (ANALYZE, BUFFERS)` shows both the estimated work and what happened during execution.
 
-PostgreSQL follows the same stages as the study material: it parses the SQL text, rewrites it, plans it (choosing the cheapest plan), then executes the plan.
+The Q4 query tree and graph illustrate the relationships between products, product variations and inventory. They are teaching diagrams rather than a record of the optimiser’s internal representation. The saved plans show the actual access paths chosen for the measured query.
 
-| Study Session 4 stage | What PostgreSQL does | Evidence |
-|---|---|---|
-| Scanning, parsing, validating | Parser checks syntax; analyser checks tables, columns and types against the catalogue | A misspelt column gives an error before any plan exists |
-| Query tree / query graph (internal representation) | Query tree; views and rules are rewritten into it | `docs/diagrams/q4_trees.png`, `q4_query_graph.png` |
-| Optimisation: choose an execution strategy | Planner enumerates paths and picks the lowest estimated cost | "Planning Time" and the `cost=` figures in every plan |
-| Code generation and execution | Executor runs the plan tree, pulling rows upward | "Execution Time", `actual time`, `rows`, `Buffers` |
+## 2. Statistics and estimates: E1 and E9
 
-### Relational algebra for Q4 (low-stock products in a category)
+E1 changes the distribution of pending orders in a scratch table. Before the change, the scan estimated 14,880 matching rows and found 14,904. With stale statistics, it estimated 25,290 and found 109,527. Refreshing statistics changed the plan to a parallel sequential scan and reduced the median from 19.570 ms to 13.050 ms. Parallel-plan row figures are per participating process, so they should not be compared directly with a serial scan’s total without accounting for loops and workers.
 
-```
-π p.product_id, p.name, v.sku, i.quantity_on_hand (
-  σ p.category_id=25 ∧ p.status='live' ∧ i.quantity_on_hand<10 (
-    (products p ⋈ product_variants v) ⋈ inventory i))
-```
+E9 checks estimate accuracy across the marketplace queries. Q3 had the largest reported difference, about 39 times at the grouping step. This identifies a place to investigate, rather than proving that the whole query has a poor plan. E9 uses one measured execution per query, so its times are not the three-run medians from the main comparison.
 
-Rewriting the selections down next to their tables gives the equivalent, cheaper expression:
+## 3. Query rewriting: E2
 
-```
-π ... ( (σ category_id=25 ∧ status='live'(products) ⋈ product_variants) ⋈ σ quantity_on_hand<10(inventory) )
-```
+The IN, EXISTS and JOIN-with-DISTINCT versions returned 2,566 rows each and used hash joins. Their medians were 5.105, 5.210 and 6.525 ms respectively. These results give little reason to expect a large benefit from changing syntax alone for this query.
 
-The picture is in `docs/diagrams/q4_trees.png` (initial tree on the left, optimised tree on the right). The query graph, with relations as nodes and join conditions as edges, is `docs/diagrams/q4_query_graph.png`. PostgreSQL did exactly this rewrite on its own. Its plan (`evidence/experiments/q4_plan_for_tree.txt`) filters `products` to 456 rows and `inventory` to 2,289 rows before joining, then joins with two hash joins and sorts only 54 result rows (7.1 ms).
+The aggregation rewrite made a clearer difference: the correlated subquery took 424.424 ms, while the join with GROUP BY took 145.036 ms. The rewritten query also used fewer shared-buffer hits.
 
-## 2. Optimisation techniques (4.1.2)
+Rewriting the date predicate as a range reduced the median from 18.985 ms to 0.052 ms. Both plans used index-only scans, but the range let PostgreSQL restrict the index search instead of evaluating a function across many entries.
 
-### 2.1 Heuristic (rule-based) optimisation: push selections down
-The Q4 plan above is the rule "apply selections and projections early" in action. The study material calls this heuristic optimisation (RBO) because it needs no statistics, only rules.
+## 4. Join algorithms: E3
 
-### 2.2 Rewriting the query: nested queries, joins and sargable predicates (experiment E2)
+For the selective query, the optimiser chose a hash join at 36.238 ms. Forced nested loops took 37.291 ms, while the forced merge join took 424.789 ms. For the broader query, the chosen hash join took 550.900 ms; forced merge and nested-loop plans took 1,940.019 and 1,974.329 ms.
 
-| Experiment | Formulation | ms | Buffers hit | Finding |
-|---|---|---|---|---|
-| E2a | `IN (subquery)` | 5.4 | n/a | All three forms were planned as the same Hash Join, so the optimiser flattens nested queries and the form made no real difference (4.7 to 6.5 ms) |
-| E2a | `EXISTS (correlated)` | 4.7 | n/a | |
-| E2a | `JOIN` + `DISTINCT` | 6.5 | n/a | |
-| E2b | Correlated subquery per row | 88.9 | 269,516 | The SubPlan runs once per outer row |
-| E2b | Join + `GROUP BY` | 113.9 | 17,882 | Reads 15 times fewer pages but was **not faster** in time (see note) |
-| E2c | `date_trunc('day', placed_at) = DATE` | 32.8 | 1,660 | The function on the column stops a range search |
-| E2c | `placed_at >= DATE AND placed_at < DATE+1` | 0.07 | 10 | About 450 times faster, 166 times fewer pages |
+The chosen join strategy was therefore reasonable for both workloads in this run. Changing planner settings is useful for comparison, but these results do not justify forcing the same join algorithm for every query.
 
-Note on E2b: I expected the join to win, and it did not in milliseconds. The rewrite clearly does far less I/O, but on this machine all data was already in memory, so the saving in page reads did not show up as time. On a cold cache or a larger table, where pages come from disk, I would expect the buffer saving to matter. I have not tested that, so it is a hypothesis.
+## 5. Index structure: E4
 
-### 2.3 Statistics and the cost-based optimiser (experiment E1)
-The study material says a cost-based optimiser (CBO) chooses a plan from estimated costs, and that the estimates depend on statistics in the catalogue.
+The latest-payment query took 11.808 ms without an index. A single-column B-tree reduced it to 9.289 ms, and a hash index took 10.877 ms. Both still required sorting.
 
-| Step | Estimated rows | Actual rows | Plan | ms |
-|---|---|---|---|---|
-| Fresh statistics | 7,650 | 7,611 | Bitmap/Index scan | 3.1 |
-| Stale statistics (data changed) | 12,975 | 107,282 | Same index plan | 21.0 |
-| After `ANALYZE` | 107,475 | 107,282 | Seq Scan | 24.7 |
+The composite B-tree matched the filter and date order, reducing the median to 0.015 ms. Adding the selected columns with INCLUDE produced an index-only scan at 0.014 ms. The difference between those last two times is too small to support a general performance claim. The covering index also used more space: 15 MB compared with 7,456 kB for the composite index.
 
-With stale statistics the optimiser underestimated the matching rows by 8 times. After `ANALYZE` it correctly switched to a sequential scan. That scan was not faster than the stale index plan in this case (25 ms against 21 ms), which is a useful honest result: the optimiser's estimate became accurate, but accuracy does not guarantee the fastest plan.
+## 6. Precomputed results: E5
 
-### 2.4 Join algorithms (experiment E3)
-Same query and data, with `enable_hashjoin`, `enable_mergejoin` and `enable_nestloop` switched to force each algorithm.
+Q8 took 83.765 ms on the base tables and 0.007 ms on the materialised view. The all-seller revenue report took 27.888 ms on the base tables and 0.009 ms on its materialised view.
 
-| Selectivity | Optimiser's choice | Forced alternatives (ms) |
-|---|---|---|
-| Selective query | Hash Join, 48.4 ms | Merge 67.6, **Nested Loop 15.1** |
-| Broad query | Merge Join, 258.8 ms | Hash 345.9, Nested Loop 328.9 (about 3.0 million buffers) |
+These read times exclude the work of keeping the views current. Refreshing the customer-value view took about 98 ms in this run, and a view can show old data between refreshes. That trade-off needs to match the reporting requirement.
 
-For the broad query the optimiser's choice was also the fastest, as the theory predicts. For the selective query it was not: the optimiser estimated nested loop at cost 14,039 against 10,574 for hash, yet nested loop ran about 3 times faster. The cost model and reality disagreed. One possible cause is that `random_page_cost` (default 4) overstates the price of random reads when everything is cached. I did not test that, so it stays a hypothesis. The lesson for the report is that the CBO is an estimate, and `EXPLAIN ANALYZE` is how to check it.
+## 7. Parallelism and memory: E6
 
-### 2.5 Pre-computation: materialised views (experiment E5)
+The scan-and-aggregate query took 140.861 ms with parallel workers disabled. The settings allowing one, two and four workers produced medians of 117.068, 56.728 and 51.378 ms. These are configured limits; they do not establish that every requested worker was launched.
 
-| Query | Base tables (ms) | Materialised view (ms) |
-|---|---|---|
-| Q8 top customers by lifetime value | 107.6 | 0.014 |
-| Seller by month revenue | 6.0 | 0.013 |
+At 4 MB of work_mem, the sort still used an external merge and took 106.472 ms. At 64 MB, it used an in-memory quicksort and took 70.866 ms. Raising memory for one query can help, but the setting also needs to account for concurrent queries and multiple sort operations.
 
-Cost of the technique: refreshing the Q8 view took about 114 ms, and the data is only as fresh as the last refresh. This is the right tool for the queries where indexes did not help (Q2, Q8, see section 3).
+## 8. Physical organisation: E7
 
-### 2.6 Parallelism and memory (experiment E6)
+The unordered heap with a B-tree answered the range query in 4.075 ms. After clustering by order ID, the range took 2.746 ms and shared-buffer hits fell from 3,513 to 105. Clustering placed related rows together, but it is a one-time operation; later writes do not automatically maintain that order.
 
-| `max_parallel_workers_per_gather` | Parallel plan? | ms |
-|---|---|---|
-| 0 | no | 143.8 |
-| 1 | yes | 90.2 |
-| 2 | yes | 101.3 |
-| 4 | yes | 101.7 |
+The hash index supported the equality query at 0.007 ms but could not serve the range query, which fell back to a scan. The sorted table’s BRIN index used only 24 kB, but its range query took 17.430 ms. Index size and execution time therefore need to be considered together.
 
-One worker gave a speed-up of about 1.6 times. More workers did not help, which is expected because the machine has 2 cores (the leader process also works). My first attempt at this experiment used a query whose best plan was an index scan, which cannot be parallelised cheaply, and the optimiser never chose a parallel plan. I replaced it with a scan-and-aggregate query and recorded the change here instead of hiding it.
+## 9. Performance under load: E8
 
-Sorting is sensitive to `work_mem`: a 64 kB limit forced an external merge sort spilling 3,992 kB to disk (210.3 ms), 4 MB still spilled (115.7 ms), and 64 MB sorted in memory (103.6 ms). The in-memory gain over 4 MB is small (about 10%) and within the run-to-run noise, so the clear finding is only that very small `work_mem` is slow.
+The mixed read workload ran for 20 seconds per configuration, with four clients and two threads.
 
-## 3. Cost factors and access paths (4.1.3)
-
-### 3.1 Index availability and type (experiment E4)
-Query: latest 20 successful card payments. 150,000 rows.
-
-| Access structure | Path | Buffers | ms |
+| Configuration | Transactions/s | Average latency (ms) | Failed transactions |
 |---|---|---|---|
-| None | Parallel Seq Scan + Sort | 6,827 | 13.8 |
-| Single-column B-tree (`method`) | Bitmap Heap Scan + Sort | 5,046 | 9.5 |
-| Hash index (`method`) | Bitmap Heap Scan + Sort | 5,286 | 10.6 |
-| Multi-column B-tree (`method, status, created_at DESC`) | Index Scan, no sort | 46 | 0.024 |
-| Covering (same keys + `INCLUDE`) | Index Only Scan, no sort | 8 | 0.015 |
+| Without four secondary indexes | 430.959 | 9.282 | 0 |
+| With those indexes | 40193.911 | 0.100 | 0 |
 
-The single-column index barely helped because about 28,000 rows match the filter and they still have to be sorted. The multi-column index matches the filter and the sort order together, and the covering index also avoids visiting the table. Cost: the multi-column index is 7.8 MB and the covering one 12 MB, against 1 MB for the single-column one.
+The recorded throughput was about 93.3 times higher with the indexes. This is one short local workload, and the result should be repeated before being treated as a stable capacity estimate. It measures reads and does not include the cost of maintaining indexes during writes.
 
-### 3.2 Which indexes helped and which did not (Q1 to Q8 with the 10 indexes in `sql/03_indexes.sql`)
-Full table: `evidence/comparison.md` and `evidence/before-after-chart.png`.
+The existing pg_stat_statements file has not been refreshed as part of this workflow, so it is not evidence for where time went in this new load test.
 
-| Query | Before (ms) | After (ms) | Speed-up | Reason |
-|---|---|---|---|---|
-| Q1 customer order history | 7.61 | 0.12 | 65x | Composite index matches filter and order |
-| Q3 seller monthly revenue | 54.42 | 7.94 | 6.9x | Joins now probe indexes |
-| Q5 product name search | 8.64 | 0.27 | 32.6x | Trigram GIN index for `ILIKE '%...%'` |
-| Q6 abandoned pending orders | 13.56 | 0.25 | 53.6x | Partial index on pending orders only |
-| Q7 recent reviews | 4.87 | 0.13 | 38.0x | Composite index returns rows pre-sorted |
-| Q2 top sellers (90 days) | 172.61 | 197.54 | 0.9x | Reads a large share of the table, so a scan is right |
-| Q4 low stock in category | 10.39 | 12.02 | 0.9x | Already cheap; change is within noise |
-| Q8 lifetime value | 132.30 | 125.86 | 1.1x | Aggregates the whole table; fixed by the materialised view |
+## 10. What these results support
 
-Those timings are from the original run before the experiments harness existed. Q1, Q5, Q6, Q7 are re-measured under load in section 4.
+The marketplace queries benefit most when an index matches a selective filter or an ordered lookup. Broader aggregation still needs to process many rows, while materialised views move that work to refresh time. Statistics, query structure, memory and physical row placement all affected the measured behaviour.
 
-### 3.3 File organisation (experiment E7)
-Copy of `order_items` with 450,000 rows. Study Session 4 lists heap, sorted/indexed and hashed file organisations.
-
-| Organisation | Index size | Exact match (ms / buffers) | Range (ms / buffers) |
-|---|---|---|---|
-| Heap, no index | none | 28.3 / 7,552 | 30.7 / 15,104 |
-| Heap + B-tree | 6.5 MB | 0.009 / 9 | 2.78 / 5,249 |
-| Heap + hash index | 15 MB | 0.015 / 5 | 27.9 / 15,104 (falls back to a scan) |
-| Clustered on the key + B-tree | 6.5 MB | 0.007 / 4 | 0.67 / 100 |
-| Sorted table + BRIN | 24 kB | 0.87 / 132 | 1.30 / 262 |
-
-The hash index wins an exact match but cannot answer a range at all, so the optimiser scans the whole table, and it is the largest index. Clustering the table on the key makes range queries about 4 times faster than the unordered heap with a B-tree (2.78 ms to 0.67 ms) and reads 50 times fewer pages. BRIN is 270 times smaller than the B-tree and still answers ranges quickly, but only because the table is physically sorted. Note that `CLUSTER` is a one-off reorganisation: new rows are not kept in order.
-
-### 3.4 Estimate accuracy across all eight queries (experiment E9)
-Worst scan, join or aggregate estimate error: Q1 1.1x, Q2 2.4x, Q3 36x (aggregate), Q4 1.1x, Q5 2.0x, Q6 1.0x, Q7 1.0x, Q8 1.0x. Only Q3 is badly off, at a grouping step, which matches the textbook point that the number of groups is the hardest thing to estimate. Plans were still good because the join order and access paths were not affected.
-
-## 4. Evaluating performance under load (4.2)
-
-Study Session 4 asks for evaluation methods and metrics (response time, throughput) rather than a single query timing. Experiment E8 runs a mixed workload with `pgbench`: 4 clients for 20 seconds, 50 per cent Q1, 30 per cent Q7, 10 per cent Q5, 10 per cent Q6 (`sql/experiments/pgbench/workload.sql`).
-
-| | Throughput (transactions/s) | Average latency (ms) |
-|---|---|---|
-| Without the four secondary indexes | 392 | 10.2 |
-| With the four indexes | 1,909 | 2.1 |
-
-That is about 4.9 times the throughput. After the run, `pg_stat_statements` showed where the remaining time went (`evidence/experiments/pgbench/e8_pg_stat_statements.txt`): the name search still takes 17.5 ms per call on average and about 33 of the 34 seconds of total execution time, even with the trigram index in place. I checked its plan: for `'%shirt 1234%'` on a 20,000-row table, the planner chose a sequential scan (cost 586) over the GIN index, because on a small table a scan is estimated cheaper. So the single-query win for Q5 in section 3.2 does not carry over to this table size, and I would not call it a general result. A larger product catalogue would change the choice.
-
-Cost of the indexes: each index adds work to every INSERT and UPDATE and takes space (see `evidence/new-index-sizes.txt`). This workload is read-only, so it does not measure that cost. A write-heavy workload would.
-
-## 5. Centralised versus distributed query cost
-In a centralised database, cost is mostly disk I/O and CPU. In a distributed one, Study Session 4 adds communication cost. Portfolio 5 measures this with `postgres_fdw`, where a remote table scan transfers rows across the network layer and the optimiser can push filters down to the remote side.
-
-## 6. Limitations
-- Single machine, 2 cores, shared sandbox: absolute timings are not representative of a production server and vary run to run.
-- Synthetic data with simple distributions, so estimates are easier than on real skewed marketplace data.
-- Everything was served from memory after warm-up, so disk-bound behaviour was not measured.
-- No write-heavy workload was run, so the maintenance cost of indexes is described, not measured.
-- PostgreSQL has no optimiser hints; I steered plans only with `enable_*` settings and index changes, which is a blunter tool than a hint.
+The data is synthetic and the experiments run on one local server. Warm caches, concurrent activity and the number of repetitions affect timings. These results explain the tested workloads; they do not establish production capacity or distributed-system behaviour.

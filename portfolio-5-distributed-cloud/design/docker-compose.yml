@@ -1,0 +1,26 @@
+# DESIGN ONLY: NOT EXECUTED. Docker was not available in my environment, so this file has never been run or tested.
+# It sketches how the Konga stack from Portfolios 1 to 5 could be started on one machine (a "private cloud in a box").
+# The streaming-replica bootstrap (pg_basebackup) is what sql/replication_lab.mjs does by hand; here it is left as a TODO.
+services:
+  pg-primary:
+    image: postgres:16
+    environment: { POSTGRES_PASSWORD: change-me, POSTGRES_DB: konga }
+    command: ["postgres", "-c", "wal_level=replica", "-c", "max_wal_senders=5", "-c", "max_replication_slots=5"]
+    volumes: ["pgprimary:/var/lib/postgresql/data", "../../portfolio-1-database-design/sql:/docker-entrypoint-initdb.d:ro"]
+    ports: ["5432:5432"]
+  pg-replica:
+    image: postgres:16
+    depends_on: [pg-primary]
+    # TODO: run pg_basebackup -R -X stream against pg-primary into this volume, then start postgres (see sql/replication_lab.mjs)
+    volumes: ["pgreplica:/var/lib/postgresql/data"]
+    ports: ["5433:5432"]
+  redis:
+    image: redis:7
+    command: ["redis-server", "--appendonly", "yes"]
+    ports: ["6379:6379"]
+  ferretdb:
+    image: ghcr.io/ferretdb/ferretdb:1
+    depends_on: [pg-primary]
+    environment: { FERRETDB_POSTGRESQL_URL: "postgres://postgres:change-me@pg-primary:5432/ferretdb" }
+    ports: ["27017:27017"]
+volumes: { pgprimary: {}, pgreplica: {} }

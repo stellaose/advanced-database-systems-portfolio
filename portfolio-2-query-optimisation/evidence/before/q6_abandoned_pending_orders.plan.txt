@@ -1,19 +1,18 @@
-Limit  (cost=5997.81..6003.56 rows=50 width=32) (actual time=10.406..12.830 rows=50 loops=1)
-  Buffers: shared hit=2986
-  ->  Gather Merge  (cost=5997.81..6981.29 rows=8552 width=32) (actual time=10.404..12.824 rows=50 loops=1)
-        Workers Planned: 1
-        Workers Launched: 1
-        Buffers: shared hit=2986
-        ->  Sort  (cost=4997.80..5019.18 rows=8552 width=32) (actual time=8.719..8.721 rows=41 loops=2)
+Limit  (cost=8707.59..8713.42 rows=50 width=90) (actual time=10.189..12.101 rows=50 loops=1)
+  Buffers: shared hit=5020 read=1307 written=96
+  ->  Gather Merge  (cost=8707.59..10144.56 rows=12316 width=90) (actual time=10.188..12.096 rows=50 loops=1)
+        Workers Planned: 2
+        Workers Launched: 2
+        Buffers: shared hit=5020 read=1307 written=96
+        ->  Sort  (cost=7707.56..7722.96 rows=6158 width=90) (actual time=7.959..7.963 rows=39 loops=3)
               Sort Key: placed_at
-              Sort Method: top-N heapsort  Memory: 30kB
-              Buffers: shared hit=2986
-              Worker 0:  Sort Method: top-N heapsort  Memory: 30kB
-              ->  Parallel Seq Scan on orders  (cost=0.00..4713.71 rows=8552 width=32) (actual time=0.475..7.691 rows=7418 loops=2)
+              Sort Method: top-N heapsort  Memory: 37kB
+              Buffers: shared hit=5020 read=1307 written=96
+              Worker 0:  Sort Method: top-N heapsort  Memory: 37kB
+              Worker 1:  Sort Method: top-N heapsort  Memory: 36kB
+              ->  Parallel Seq Scan on orders  (cost=0.00..7503.00 rows=6158 width=90) (actual time=0.267..7.258 rows=4945 loops=3)
                     Filter: (((status)::text = 'pending'::text) AND (placed_at < (now() - '2 days'::interval)))
-                    Rows Removed by Filter: 67582
-                    Buffers: shared hit=2949
-Planning:
-  Buffers: shared hit=92
-Planning Time: 0.297 ms
-Execution Time: 12.863 ms
+                    Rows Removed by Filter: 45055
+                    Buffers: shared hit=4946 read=1307 written=96
+Planning Time: 0.030 ms
+Execution Time: 12.116 ms
