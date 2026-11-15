@@ -103,9 +103,9 @@ I used **Chen notation** for the conceptual diagram, following the study session
 - A **diamond** represents a relationship between entities.
 - The labels **1**, **M** and **N** indicate relationship cardinalities. Both M and N mean “many”; for example, 1:N means one-to-many and M:N means many-to-many. These labels show the maximum cardinalities, rather than whether participation is optional or mandatory.
 
-![Conceptual ER diagram (Chen notation)](diagrams/er-conceptual-chen.png)
+![Conceptual ER diagram (Chen notation)](diagrams/er-design-chen.png)
 
-The [generation script](diagrams/make_chen_er.py) creates the Graphviz diagram source. An [SVG version](diagrams/er-conceptual-chen.svg) and a [Mermaid version](diagrams/er-conceptual-chen.mmd) are also available. Each entity shows its key and a few selected attributes so that the diagram is easy to read. The [logical design and data dictionary](#stage-3-logical-design-relational-schema) provide the full table and column definitions.
+The [generation script](diagrams/make_er_chen.py) creates the Graphviz diagram source. An [SVG version](diagrams/er-design-chen.svg) and a [Mermaid version](diagrams/er-conceptual-chen.mmd) are also available. Each entity shows its key and a few selected attributes so that the diagram is easy to read. The [logical design and data dictionary](#stage-3-logical-design-relational-schema) provide the full table and column definitions.
 
 ### Modelling decisions
 
