@@ -5,8 +5,16 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
+  "p2:experiments": "node portfolio-2-query-optimisation/sql/experiments/run_experiments.mjs",
+  "p3:lab": "node portfolio-3-transactions-concurrency/sql/concurrency_lab.mjs",
+  "p4:data": "node portfolio-4-nosql/src/00_generate_data.mjs",
+  "p4:document": "node portfolio-4-nosql/src/01_document_ferretdb.mjs",
+  "p4:redis": "node portfolio-4-nosql/src/02_keyvalue_redis.mjs",
+  "p4:graph": "node portfolio-4-nosql/src/03_graph_ladybug.mjs",
+  "p5:replication": "node portfolio-5-distributed-cloud/sql/replication_lab.mjs",
+  "p5:sharding": "node portfolio-5-distributed-cloud/sql/sharding_fdw_lab.mjs",
+  "p5:security": "node portfolio-5-distributed-cloud/sql/security_tests.mjs"
+},
   "author": "Stella Oseyomon",
   "license": "ISC",
   "dependencies": {
