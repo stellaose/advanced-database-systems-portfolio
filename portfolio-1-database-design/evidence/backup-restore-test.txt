@@ -1,0 +1,38 @@
+**1.Row counts
+customers|4
+orders|0
+order_items|0
+payments | 0
+$2.Take the backup
+  43426 bytes
+!3.Simulate the disaster
+NOTICE:  drop cascades to 21 other objects
+DETAIL:  drop cascades to table konga.customers
+drop cascades to table konga.addresses
+drop cascades to table konga.sellers
+drop cascades to table konga.categories
+drop cascades to table konga.brands
+drop cascades to table konga.products
+drop cascades to table konga.product_variants
+drop cascades to table konga.inventory
+drop cascades to function konga.create_inventory_record()
+drop cascades to function konga.check_inventory_record()
+drop cascades to table konga.carts
+drop cascades to table konga.cart_items
+drop cascades to table konga.coupons
+drop cascades to table konga.orders
+drop cascades to table konga.order_items
+drop cascades to table konga.payments
+drop cascades to table konga.refunds
+drop cascades to table konga.shipments
+drop cascades to table konga.shipment_events
+drop cascades to table konga.reviews
+drop cascades to table konga.payouts
+DROP SCHEMA
+0
+@4.Restore from the backup
++5.Compare the counts
+customers|4
+orders|0
+order_items|0
+payments | 0

@@ -1,0 +1,27 @@
+-- E2b join + GROUP BY (rewritten)
+-- SELECT o.order_id, sum(i.quantity * i.unit_price) AS total FROM konga.orders o LEFT JOIN konga.order_items i ON i.order_id = o.order_id WHERE o.customer_id < 3000 GROUP BY o.order_id
+
+HashAggregate  (cost=14110.79..14386.90 rows=22089 width=40) (actual time=101.912..112.949 rows=22316 loops=1)
+  Group Key: o.order_id
+  Batches: 5  Memory Usage: 8241kB  Disk Usage: 656kB
+  Buffers: shared hit=5386, temp read=44 written=113
+  I/O Timings: temp read=0.056 write=0.303
+  ->  Hash Right Join  (cost=4016.83..13448.12 rows=66267 width=20) (actual time=7.769..78.864 rows=66957 loops=1)
+        Hash Cond: (i.order_id = o.order_id)
+        Buffers: shared hit=5386
+        ->  Seq Scan on order_items i  (cost=0.00..8250.00 rows=450000 width=20) (actual time=0.008..25.991 rows=450000 loops=1)
+              Buffers: shared hit=3750
+        ->  Hash  (cost=3740.72..3740.72 rows=22089 width=8) (actual time=7.744..7.745 rows=22316 loops=1)
+              Buckets: 32768  Batches: 1  Memory Usage: 1128kB
+              Buffers: shared hit=1636
+              ->  Bitmap Heap Scan on orders o  (cost=515.61..3740.72 rows=22089 width=8) (actual time=1.086..5.456 rows=22316 loops=1)
+                    Recheck Cond: (customer_id < 3000)
+                    Heap Blocks: exact=1548
+                    Buffers: shared hit=1636
+                    ->  Bitmap Index Scan on idx_orders_customer_placed  (cost=0.00..510.09 rows=22089 width=0) (actual time=0.926..0.926 rows=22316 loops=1)
+                          Index Cond: (customer_id < 3000)
+                          Buffers: shared hit=88
+Planning:
+  Buffers: shared hit=16
+Planning Time: 0.201 ms
+Execution Time: 113.939 ms

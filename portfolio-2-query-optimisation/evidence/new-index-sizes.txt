@@ -1,0 +1,10 @@
+idx_inventory_low_stock|88 kB
+idx_order_items_variant|4248 kB
+idx_orders_customer_placed|4640 kB
+idx_orders_pending_placed|344 kB
+idx_orders_placed_at|3312 kB
+idx_products_category_live|144 kB
+idx_products_name_trgm|952 kB
+idx_products_seller|160 kB
+idx_reviews_product_created|1856 kB
+idx_variants_product|896 kB

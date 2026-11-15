@@ -1,0 +1,9 @@
+-- Q8 from the materialised view
+-- SELECT customer_id, full_name, orders, lifetime_value FROM exp.mv_customer_ltv ORDER BY lifetime_value DESC LIMIT 10
+
+Limit  (cost=0.29..0.97 rows=10 width=38) (actual time=0.005..0.009 rows=10 loops=1)
+  Buffers: shared hit=12
+  ->  Index Scan using mv_customer_ltv_lifetime_value_idx on mv_customer_ltv  (cost=0.29..1370.89 rows=19979 width=38) (actual time=0.005..0.007 rows=10 loops=1)
+        Buffers: shared hit=12
+Planning Time: 0.025 ms
+Execution Time: 0.014 ms

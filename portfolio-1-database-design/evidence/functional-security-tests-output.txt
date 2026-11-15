@@ -1,0 +1,25 @@
+SET
+--- F1: order totals equal the sum of their items less any coupon discount (percentage or fixed)
+psql:sql/05_functional_and_security_tests.sql:16: NOTICE:  F1 passed
+DO
+--- F2: every order has at least one item (no orphan orders)
+psql:sql/05_functional_and_security_tests.sql:23: NOTICE:  F2 passed
+DO
+--- F3: referential integrity - no order points to a missing customer/address
+psql:sql/05_functional_and_security_tests.sql:32: NOTICE:  F3 passed
+DO
+--- F4: view v_order_summary returns one row per order with correct line counts
+psql:sql/05_functional_and_security_tests.sql:40: NOTICE:  F4 passed
+DO
+--- S1: konga_support can read customers but NOT password_hash
+psql:sql/05_functional_and_security_tests.sql:50: NOTICE:  S1 passed (password_hash denied)
+DO
+--- S2: konga_support cannot modify data
+psql:sql/05_functional_and_security_tests.sql:59: NOTICE:  S2 passed (UPDATE denied)
+DO
+--- S3: konga_analyst can use aggregated views but cannot read customers
+psql:sql/05_functional_and_security_tests.sql:69: NOTICE:  S3 passed (customers denied)
+DO
+--- S4: konga_app cannot drop tables (no DDL rights)
+psql:sql/05_functional_and_security_tests.sql:78: NOTICE:  S4 passed (DROP denied)
+DO

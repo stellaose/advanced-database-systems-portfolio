@@ -1,0 +1,616 @@
+{
+ "E1": [
+  {
+   "label": "A. fresh statistics ('returned' is about 5% of rows)",
+   "ms": 3.076,
+   "est_rows": 1,
+   "act_rows": 1,
+   "buf_hit": 2819,
+   "buf_read": 0,
+   "sort": "",
+   "first_node": "Aggregate  (cost=1629.46..1629.47 rows=1 width=40) (actual time=2.983..2.984 rows=1 loops=",
+   "scan": "Bitmap Heap Scan, Index Scan",
+   "scan_est": 7650,
+   "scan_act": 7611
+  },
+  {
+   "label": "B. STALE statistics after the data changed",
+   "ms": 20.977,
+   "est_rows": 1,
+   "act_rows": 1,
+   "buf_hit": 5027,
+   "buf_read": 0,
+   "sort": "",
+   "first_node": "Aggregate  (cost=2759.92..2759.93 rows=1 width=40) (actual time=19.217..19.218 rows=1 loop",
+   "scan": "Bitmap Heap Scan, Index Scan",
+   "scan_est": 12975,
+   "scan_act": 107282
+  },
+  {
+   "label": "C. after ANALYZE (statistics refreshed)",
+   "ms": 24.686,
+   "est_rows": 1,
+   "act_rows": 1,
+   "buf_hit": 4776,
+   "buf_read": 0,
+   "sort": "",
+   "first_node": "Aggregate  (cost=4800.38..4800.39 rows=1 width=40) (actual time=24.492..24.492 rows=1 loop",
+   "scan": "Seq Scan",
+   "scan_est": 107475,
+   "scan_act": 107282
+  }
+ ],
+ "E2": {
+  "a": [
+   {
+    "label": "E2a IN (subquery)",
+    "ms": 5.353,
+    "est_rows": 2416,
+    "act_rows": 2366,
+    "buf_hit": 5864,
+    "buf_read": 0,
+    "sort": "",
+    "first_node": "Hash Join  (cost=3082.75..3689.13 rows=2416 width=22) (actual time=1.867..4.651 rows=2366 ",
+    "join": "Hash Join"
+   },
+   {
+    "label": "E2a EXISTS (correlated)",
+    "ms": 4.703,
+    "est_rows": 2416,
+    "act_rows": 2366,
+    "buf_hit": 5864,
+    "buf_read": 0,
+    "sort": "",
+    "first_node": "Hash Join  (cost=3082.75..3689.13 rows=2416 width=22) (actual time=1.838..4.593 rows=2366 ",
+    "join": "Hash Join"
+   },
+   {
+    "label": "E2a JOIN + DISTINCT",
+    "ms": 6.452,
+    "est_rows": 2416,
+    "act_rows": 2366,
+    "buf_hit": 5218,
+    "buf_read": 0,
+    "sort": "",
+    "first_node": "HashAggregate  (cost=3820.72..3844.88 rows=2416 width=22) (actual time=5.304..5.463 rows=2",
+    "join": "Hash Join"
+   }
+  ],
+  "b": [
+   {
+    "label": "E2b correlated subquery per row",
+    "ms": 88.85,
+    "est_rows": 22089,
+    "act_rows": 22316,
+    "buf_hit": 269516,
+    "buf_read": 0,
+    "sort": "",
+    "first_node": "Bitmap Heap Scan on orders o  (cost=515.61..308237.59 rows=22089 width=40) (actual time=5.",
+    "join": "SubPlan"
+   },
+   {
+    "label": "E2b join + GROUP BY (rewritten)",
+    "ms": 113.939,
+    "est_rows": 22089,
+    "act_rows": 22316,
+    "buf_hit": 17882,
+    "buf_read": 44,
+    "sort": "",
+    "first_node": "HashAggregate  (cost=14110.79..14386.90 rows=22089 width=40) (actual time=101.912..112.949",
+    "join": "Hash Right Join"
+   }
+  ],
+  "c": [
+   {
+    "label": "E2c function on column: date_trunc('day', placed_at) = DATE",
+    "ms": 32.83,
+    "est_rows": 1,
+    "act_rows": 1,
+    "buf_hit": 1660,
+    "buf_read": 0,
+    "sort": "",
+    "first_node": "Finalize Aggregate  (cost=4813.67..4813.68 rows=1 width=8) (actual time=32.754..32.813 row",
+    "scan": "Index Only Scan"
+   },
+   {
+    "label": "E2c range on the bare column (rewritten)",
+    "ms": 0.073,
+    "est_rows": 1,
+    "act_rows": 1,
+    "buf_hit": 10,
+    "buf_read": 0,
+    "sort": "",
+    "first_node": "Aggregate  (cost=17.34..17.36 rows=1 width=8) (actual time=0.061..0.062 rows=1 loops=1)",
+    "scan": "Index Only Scan"
+   }
+  ]
+ },
+ "E3": [
+  {
+   "label": "E3 selective (customer_id < 300, about 1.5% of orders) / optimiser's choice",
+   "ms": 48.43,
+   "est_rows": 2122,
+   "act_rows": 2182,
+   "buf_hit": 25829,
+   "buf_read": 0,
+   "sort": "",
+   "first_node": "Finalize HashAggregate  (cost=10547.42..10573.94 rows=2122 width=40) (actual time=46.076..",
+   "algo": "optimiser's choice",
+   "sel": "selective",
+   "join": "Hash Join",
+   "cost": "10573.94"
+  },
+  {
+   "label": "E3 selective (customer_id < 300, about 1.5% of orders) / force hash join",
+   "ms": 44.073,
+   "est_rows": 2122,
+   "act_rows": 2182,
+   "buf_hit": 25829,
+   "buf_read": 0,
+   "sort": "",
+   "first_node": "Finalize HashAggregate  (cost=10547.42..10573.94 rows=2122 width=40) (actual time=41.525..",
+   "algo": "force hash join",
+   "sel": "selective",
+   "join": "Hash Join",
+   "cost": "10573.94"
+  },
+  {
+   "label": "E3 selective (customer_id < 300, about 1.5% of orders) / force merge join",
+   "ms": 67.604,
+   "est_rows": 2122,
+   "act_rows": 2182,
+   "buf_hit": 54754,
+   "buf_read": 0,
+   "sort": "quicksort  Memory: 97kB",
+   "first_node": "Finalize GroupAggregate  (cost=4033.96..24895.67 rows=2122 width=40) (actual time=26.513..",
+   "algo": "force merge join",
+   "sel": "selective",
+   "join": "Merge Join",
+   "cost": "24895.67"
+  },
+  {
+   "label": "E3 selective (customer_id < 300, about 1.5% of orders) / force nested loop",
+   "ms": 15.091,
+   "est_rows": 2122,
+   "act_rows": 2182,
+   "buf_hit": 49521,
+   "buf_read": 0,
+   "sort": "",
+   "first_node": "Finalize HashAggregate  (cost=14012.18..14038.70 rows=2122 width=40) (actual time=11.446..",
+   "algo": "force nested loop",
+   "sel": "selective",
+   "join": "Nested Loop",
+   "cost": "14038.70"
+  },
+  {
+   "label": "E3 broad (customer_id < 15000, about 75% of orders) / optimiser's choice",
+   "ms": 258.77,
+   "est_rows": 112401,
+   "act_rows": 112157,
+   "buf_hit": 28245,
+   "buf_read": 0,
+   "sort": "quicksort  Memory: 3073kB",
+   "first_node": "GroupAggregate  (cost=14253.99..46469.55 rows=112401 width=40) (actual time=27.216..254.09",
+   "algo": "optimiser's choice",
+   "sel": "broad",
+   "join": "Merge Join",
+   "cost": "46469.55"
+  },
+  {
+   "label": "E3 broad (customer_id < 15000, about 75% of orders) / force hash join",
+   "ms": 345.939,
+   "est_rows": 112401,
+   "act_rows": 112157,
+   "buf_hit": 23046,
+   "buf_read": 1398,
+   "sort": "",
+   "first_node": "HashAggregate  (cost=41582.78..46939.39 rows=112401 width=40) (actual time=239.485..381.09",
+   "algo": "force hash join",
+   "sel": "broad",
+   "join": "Hash Join",
+   "cost": "46939.39"
+  },
+  {
+   "label": "E3 broad (customer_id < 15000, about 75% of orders) / force merge join",
+   "ms": 258.77,
+   "est_rows": 112401,
+   "act_rows": 112157,
+   "buf_hit": 28245,
+   "buf_read": 0,
+   "sort": "quicksort  Memory: 3073kB",
+   "first_node": "GroupAggregate  (cost=14253.99..46469.55 rows=112401 width=40) (actual time=25.472..253.94",
+   "algo": "force merge join",
+   "sel": "broad",
+   "join": "Merge Join",
+   "cost": "46469.55"
+  },
+  {
+   "label": "E3 broad (customer_id < 15000, about 75% of orders) / force nested loop",
+   "ms": 328.859,
+   "est_rows": 112401,
+   "act_rows": 112157,
+   "buf_hit": 2995860,
+   "buf_read": 0,
+   "sort": "",
+   "first_node": "Finalize GroupAggregate  (cost=1000.85..82464.74 rows=112401 width=40) (actual time=19.355",
+   "algo": "force nested loop",
+   "sel": "broad",
+   "join": "Nested Loop",
+   "cost": "82464.74"
+  }
+ ],
+ "E4": [
+  {
+   "label": "1. no index (heap scan)",
+   "ms": 13.781,
+   "est_rows": 20,
+   "act_rows": 20,
+   "buf_hit": 6827,
+   "buf_read": 0,
+   "sort": "top-N heapsort  Memory: 27kB",
+   "first_node": "Limit  (cost=4419.33..4421.63 rows=20 width=24) (actual time=11.950..13.764 rows=20 loops=",
+   "scan": "Parallel Seq Scan",
+   "sorted": "yes",
+   "size": "-"
+  },
+  {
+   "label": "2. single-column B-tree (method)",
+   "ms": 9.515,
+   "est_rows": 20,
+   "act_rows": 20,
+   "buf_hit": 5046,
+   "buf_read": 0,
+   "sort": "top-N heapsort  Memory: 27kB",
+   "first_node": "Limit  (cost=3362.60..3362.65 rows=20 width=24) (actual time=9.226..9.229 rows=20 loops=1)",
+   "scan": "Bitmap Heap Scan, Index Scan",
+   "sorted": "yes",
+   "size": "1040 kB"
+  },
+  {
+   "label": "3. hash index (method)",
+   "ms": 10.602,
+   "est_rows": 20,
+   "act_rows": 20,
+   "buf_hit": 5286,
+   "buf_read": 0,
+   "sort": "top-N heapsort  Memory: 27kB",
+   "first_node": "Limit  (cost=4122.02..4122.07 rows=20 width=24) (actual time=10.174..10.177 rows=20 loops=",
+   "scan": "Bitmap Heap Scan, Index Scan",
+   "sorted": "yes",
+   "size": "7056 kB"
+  },
+  {
+   "label": "4. multi-column B-tree (method, status, created_at DESC)",
+   "ms": 0.024,
+   "est_rows": 20,
+   "act_rows": 20,
+   "buf_hit": 46,
+   "buf_read": 0,
+   "sort": "",
+   "first_node": "Limit  (cost=0.42..5.82 rows=20 width=24) (actual time=0.010..0.017 rows=20 loops=1)",
+   "scan": "Index Scan",
+   "sorted": "no",
+   "size": "7848 kB"
+  },
+  {
+   "label": "5. covering (same keys + INCLUDE payment_id, amount)",
+   "ms": 0.015,
+   "est_rows": 20,
+   "act_rows": 20,
+   "buf_hit": 8,
+   "buf_read": 0,
+   "sort": "",
+   "first_node": "Limit  (cost=0.42..1.61 rows=20 width=24) (actual time=0.007..0.010 rows=20 loops=1)",
+   "scan": "Index Only Scan",
+   "sorted": "no",
+   "size": "12 MB"
+  }
+ ],
+ "E5": {
+  "rows": [
+   {
+    "label": "Q8 on base tables (join + aggregate every time)",
+    "ms": 107.588,
+    "est_rows": 10,
+    "act_rows": 10,
+    "buf_hit": 16707,
+    "buf_read": 225,
+    "sort": "top-N heapsort  Memory: 26kB",
+    "first_node": "Limit  (cost=7567.97..7568.00 rows=10 width=62) (actual time=108.842..108.847 rows=10 loop"
+   },
+   {
+    "label": "Q8 from the materialised view",
+    "ms": 0.014,
+    "est_rows": 10,
+    "act_rows": 10,
+    "buf_hit": 24,
+    "buf_read": 0,
+    "sort": "",
+    "first_node": "Limit  (cost=0.29..0.97 rows=10 width=38) (actual time=0.005..0.009 rows=10 loops=1)"
+   },
+   {
+    "label": "Seller x month revenue report on base tables",
+    "ms": 6.028,
+    "est_rows": 20,
+    "act_rows": 20,
+    "buf_hit": 53673,
+    "buf_read": 0,
+    "sort": "quicksort  Average Memory: 28kB  Peak Memory: 28kB",
+    "first_node": "Limit  (cost=419.89..437.68 rows=20 width=48) (actual time=2.066..5.471 rows=20 loops=1)"
+   },
+   {
+    "label": "Seller x month revenue from the materialised view",
+    "ms": 0.013,
+    "est_rows": 20,
+    "act_rows": 20,
+    "buf_hit": 42,
+    "buf_read": 0,
+    "sort": "",
+    "first_node": "Limit  (cost=0.28..1.70 rows=20 width=24) (actual time=0.003..0.009 rows=20 loops=1)"
+   }
+  ],
+  "refreshMs": 114,
+  "sizes": [
+   "2184 kB",
+   "736 kB"
+  ]
+ },
+ "E6": {
+  "par": [
+   {
+    "label": "max_parallel_workers_per_gather = 0",
+    "ms": 143.751,
+    "est_rows": 1,
+    "act_rows": 1,
+    "buf_hit": 7500,
+    "buf_read": 0,
+    "sort": "",
+    "first_node": "Aggregate  (cost=13701.16..13701.17 rows=1 width=40) (actual time=174.897..174.898 rows=1 ",
+    "workers": 0,
+    "parallel": "no"
+   },
+   {
+    "label": "max_parallel_workers_per_gather = 1",
+    "ms": 90.193,
+    "est_rows": 1,
+    "act_rows": 1,
+    "buf_hit": 15000,
+    "buf_read": 0,
+    "sort": "",
+    "first_node": "Finalize Aggregate  (cost=10603.75..10603.76 rows=1 width=40) (actual time=86.941..89.690 ",
+    "workers": 1,
+    "parallel": "yes"
+   },
+   {
+    "label": "max_parallel_workers_per_gather = 2",
+    "ms": 101.266,
+    "est_rows": 1,
+    "act_rows": 1,
+    "buf_hit": 15000,
+    "buf_read": 0,
+    "sort": "",
+    "first_node": "Finalize Aggregate  (cost=8896.55..8896.56 rows=1 width=40) (actual time=104.283..105.001 ",
+    "workers": 2,
+    "parallel": "yes"
+   },
+   {
+    "label": "max_parallel_workers_per_gather = 4",
+    "ms": 101.712,
+    "est_rows": 1,
+    "act_rows": 1,
+    "buf_hit": 15000,
+    "buf_read": 0,
+    "sort": "",
+    "first_node": "Finalize Aggregate  (cost=8896.55..8896.56 rows=1 width=40) (actual time=96.406..96.520 ro",
+    "workers": 4,
+    "parallel": "yes"
+   }
+  ],
+  "mem": [
+   {
+    "label": "ORDER BY over 150,000 rows, work_mem = 64kB",
+    "ms": 210.285,
+    "est_rows": 150000,
+    "act_rows": 150000,
+    "buf_hit": 5898,
+    "buf_read": 1492,
+    "sort": "external merge  Disk: 3992kB",
+    "first_node": "Sort  (cost=25041.45..25416.45 rows=150000 width=16) (actual time=180.226..247.729 rows=15",
+    "wm": "64kB"
+   },
+   {
+    "label": "ORDER BY over 150,000 rows, work_mem = 1MB",
+    "ms": 160.09,
+    "est_rows": 150000,
+    "act_rows": 150000,
+    "buf_hit": 5898,
+    "buf_read": 994,
+    "sort": "external merge  Disk: 3976kB",
+    "first_node": "Sort  (cost=19910.45..20285.45 rows=150000 width=16) (actual time=126.893..153.431 rows=15",
+    "wm": "1MB"
+   },
+   {
+    "label": "ORDER BY over 150,000 rows, work_mem = 4MB",
+    "ms": 115.734,
+    "est_rows": 150000,
+    "act_rows": 150000,
+    "buf_hit": 5898,
+    "buf_read": 497,
+    "sort": "external merge  Disk: 3976kB",
+    "first_node": "Sort  (cost=19910.45..20285.45 rows=150000 width=16) (actual time=67.627..109.796 rows=150",
+    "wm": "4MB"
+   },
+   {
+    "label": "ORDER BY over 150,000 rows, work_mem = 64MB",
+    "ms": 103.634,
+    "est_rows": 150000,
+    "act_rows": 150000,
+    "buf_hit": 5898,
+    "buf_read": 0,
+    "sort": "quicksort  Memory: 13160kB",
+    "first_node": "Sort  (cost=17344.95..17719.95 rows=150000 width=16) (actual time=72.767..92.755 rows=1500",
+    "wm": "64MB"
+   }
+  ]
+ },
+ "E7": {
+  "rows": [
+   {
+    "label": "Heap (unordered), no index",
+    "ex_scan": "Parallel Seq Scan",
+    "ex_ms": 28.336,
+    "ex_buf": 7552,
+    "rg_scan": "Parallel Seq Scan",
+    "rg_ms": 30.651,
+    "rg_buf": 15104,
+    "size": "-"
+   },
+   {
+    "label": "Heap + B-tree index (indexed organisation, scattered rows)",
+    "ex_scan": "Bitmap Heap Scan, Index Scan",
+    "ex_ms": 0.009,
+    "ex_buf": 9,
+    "rg_scan": "Bitmap Heap Scan, Index Scan",
+    "rg_ms": 2.776,
+    "rg_buf": 5249,
+    "size": "6464 kB"
+   },
+   {
+    "label": "Heap + hash index",
+    "ex_scan": "Bitmap Heap Scan, Index Scan",
+    "ex_ms": 0.015,
+    "ex_buf": 5,
+    "rg_scan": "Parallel Seq Scan",
+    "rg_ms": 27.893,
+    "rg_buf": 15104,
+    "size": "15 MB"
+   },
+   {
+    "label": "Clustered on order_id + B-tree",
+    "ex_scan": "Index Scan",
+    "ex_ms": 0.007,
+    "ex_buf": 4,
+    "rg_scan": "Index Scan",
+    "rg_ms": 0.667,
+    "rg_buf": 100,
+    "size": "6464 kB"
+   },
+   {
+    "label": "Sorted table + BRIN index (block-range)",
+    "ex_scan": "Bitmap Heap Scan, Index Scan",
+    "ex_ms": 0.86,
+    "ex_buf": 132,
+    "rg_scan": "Bitmap Heap Scan, Index Scan",
+    "rg_ms": 1.276,
+    "rg_buf": 262,
+    "size": "24 kB"
+   }
+  ],
+  "corr": {
+   "items_heap": "0.004",
+   "items_seq": "1.000"
+  },
+  "corrAfter": {
+   "items_heap": "1.000",
+   "items_seq": "1.000"
+  }
+ },
+ "E9": [
+  {
+   "label": "E9 q1_customer_order_history",
+   "ms": 0.048,
+   "est_rows": 8,
+   "act_rows": 7,
+   "buf_hit": 23,
+   "buf_read": 0,
+   "sort": "quicksort  Memory: 25kB",
+   "first_node": "Sort  (cost=35.45..35.47 rows=8 width=33) (actual time=0.032..0.033 rows=7 loops=1)",
+   "q": "Q1",
+   "worst": "1.1x (Bitmap Heap Scan on orders)"
+  },
+  {
+   "label": "E9 q2_top_selling_90_days",
+   "ms": 160.377,
+   "est_rows": 10,
+   "act_rows": 10,
+   "buf_hit": 37250,
+   "buf_read": 0,
+   "sort": "top-N heapsort  Memory: 26kB",
+   "first_node": "Limit  (cost=27483.78..27483.80 rows=10 width=27) (actual time=160.237..160.244 rows=10 lo",
+   "q": "Q2",
+   "worst": "2.4x (HashAggregate)"
+  },
+  {
+   "label": "E9 q3_seller_monthly_revenue",
+   "ms": 3.766,
+   "est_rows": 467,
+   "act_rows": 13,
+   "buf_hit": 24842,
+   "buf_read": 0,
+   "sort": "quicksort  Memory: 55kB",
+   "first_node": "GroupAggregate  (cost=1197.07..1211.08 rows=467 width=48) (actual time=3.609..3.734 rows=1",
+   "q": "Q3",
+   "worst": "35.9x (GroupAggregate)"
+  },
+  {
+   "label": "E9 q4_low_stock_in_category",
+   "ms": 9.584,
+   "est_rows": 50,
+   "act_rows": 54,
+   "buf_hit": 3381,
+   "buf_read": 0,
+   "sort": "quicksort  Memory: 28kB",
+   "first_node": "Sort  (cost=1628.90..1629.03 rows=50 width=43) (actual time=9.540..9.546 rows=54 loops=1)",
+   "q": "Q4",
+   "worst": "1.1x (Hash Join)"
+  },
+  {
+   "label": "E9 q5_product_name_search",
+   "ms": 8.212,
+   "est_rows": 2,
+   "act_rows": 1,
+   "buf_hit": 336,
+   "buf_read": 0,
+   "sort": "",
+   "first_node": "Seq Scan on products  (cost=0.00..586.00 rows=2 width=33) (actual time=5.073..8.203 rows=1",
+   "q": "Q5",
+   "worst": "2.0x (Seq Scan on products)"
+  },
+  {
+   "label": "E9 q6_abandoned_pending_orders",
+   "ms": 0.077,
+   "est_rows": 50,
+   "act_rows": 50,
+   "buf_hit": 104,
+   "buf_read": 0,
+   "sort": "",
+   "first_node": "Limit  (cost=0.29..41.41 rows=50 width=32) (actual time=0.014..0.064 rows=50 loops=1)",
+   "q": "Q6",
+   "worst": "1.0x ()"
+  },
+  {
+   "label": "E9 q7_product_recent_reviews",
+   "ms": 0.041,
+   "est_rows": 3,
+   "act_rows": 3,
+   "buf_hit": 17,
+   "buf_read": 0,
+   "sort": "quicksort  Memory: 25kB",
+   "first_node": "Limit  (cost=15.77..15.78 rows=3 width=48) (actual time=0.024..0.025 rows=3 loops=1)",
+   "q": "Q7",
+   "worst": "1.0x ()"
+  },
+  {
+   "label": "E9 q8_top_customers_lifetime_value",
+   "ms": 139.125,
+   "est_rows": 10,
+   "act_rows": 10,
+   "buf_hit": 16707,
+   "buf_read": 225,
+   "sort": "top-N heapsort  Memory: 26kB",
+   "first_node": "Limit  (cost=7567.97..7568.00 rows=10 width=62) (actual time=138.937..138.943 rows=10 loop",
+   "q": "Q8",
+   "worst": "1.0x (Hash Join)"
+  }
+ ]
+}

@@ -1,0 +1,9 @@
+Limit  (cost=0.29..42.91 rows=50 width=32) (actual time=0.028..0.211 rows=50 loops=1)
+  Buffers: shared hit=52
+  ->  Index Scan using idx_orders_pending_placed on orders  (cost=0.29..12218.74 rows=14333 width=32) (actual time=0.027..0.207 rows=50 loops=1)
+        Index Cond: (placed_at < (now() - '2 days'::interval))
+        Buffers: shared hit=52
+Planning:
+  Buffers: shared hit=145
+Planning Time: 0.472 ms
+Execution Time: 0.238 ms

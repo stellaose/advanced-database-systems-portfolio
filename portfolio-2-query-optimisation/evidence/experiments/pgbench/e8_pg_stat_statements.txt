@@ -1,0 +1,8 @@
+                                 query                                  | calls | total_ms | mean_ms |  hit   | read 
+------------------------------------------------------------------------+-------+----------+---------+--------+------
+ SELECT product_id, name FROM konga.products WHERE name ILIKE $1 || $2  |  1916 |    33512 |  17.490 | 643440 |  336
+ SELECT order_id, placed_at, status, total_amount FROM konga.orders WHE |  9726 |      266 |   0.027 | 100284 | 2078
+ SELECT review_id, rating, created_at FROM konga.reviews WHERE product_ |  5865 |       94 |   0.016 |  28435 |  903
+ SELECT order_id, placed_at FROM konga.orders WHERE status = $1 AND pla |  1995 |       82 |   0.041 | 103689 |   51
+(4 rows)
+

@@ -1,0 +1,32 @@
+-- Q8 on base tables (join + aggregate every time)
+-- SELECT c.customer_id, c.full_name, count(*) AS orders, sum(o.total_amount) AS lifetime_value FROM konga.customers c JOIN konga.orders o ON o.customer_id = c.customer_id WHERE o.status NOT IN ('cancelled','returned') GROUP BY c.customer_id, c.full_name ORDER BY lifetime_value DESC LIMIT 10
+
+Limit  (cost=7567.97..7568.00 rows=10 width=62) (actual time=108.842..108.847 rows=10 loops=1)
+  Buffers: shared hit=3276, temp read=75 written=142
+  I/O Timings: temp read=0.091 write=0.549
+  ->  Sort  (cost=7567.97..7617.97 rows=20000 width=62) (actual time=108.840..108.844 rows=10 loops=1)
+        Sort Key: (sum(o.total_amount)) DESC
+        Sort Method: top-N heapsort  Memory: 26kB
+        Buffers: shared hit=3276, temp read=75 written=142
+        I/O Timings: temp read=0.091 write=0.549
+        ->  HashAggregate  (cost=6885.78..7135.78 rows=20000 width=62) (actual time=96.635..104.225 rows=19979 loops=1)
+              Group Key: c.customer_id
+              Batches: 5  Memory Usage: 8241kB  Disk Usage: 720kB
+              Buffers: shared hit=3276, temp read=75 written=142
+              I/O Timings: temp read=0.091 write=0.549
+              ->  Hash Join  (cost=777.00..5934.14 rows=126885 width=30) (actual time=4.410..50.841 rows=127305 loops=1)
+                    Hash Cond: (o.customer_id = c.customer_id)
+                    Buffers: shared hit=3276
+                    ->  Seq Scan on orders o  (cost=0.00..4824.00 rows=126885 width=16) (actual time=0.446..19.167 rows=127305 loops=1)
+                          Filter: ((status)::text <> ALL ('{cancelled,returned}'::text[]))
+                          Rows Removed by Filter: 22695
+                          Buffers: shared hit=2949
+                    ->  Hash  (cost=527.00..527.00 rows=20000 width=22) (actual time=3.946..3.947 rows=20000 loops=1)
+                          Buckets: 32768  Batches: 1  Memory Usage: 1320kB
+                          Buffers: shared hit=327
+                          ->  Seq Scan on customers c  (cost=0.00..527.00 rows=20000 width=22) (actual time=0.004..1.523 rows=20000 loops=1)
+                                Buffers: shared hit=327
+Planning:
+  Buffers: shared hit=17
+Planning Time: 0.287 ms
+Execution Time: 109.016 ms

@@ -1,0 +1,22 @@
+-- E2b correlated subquery per row
+-- SELECT o.order_id, (SELECT sum(i.quantity * i.unit_price) FROM konga.order_items i WHERE i.order_id = o.order_id) AS total FROM konga.orders o WHERE o.customer_id < 3000
+
+Bitmap Heap Scan on orders o  (cost=515.61..308237.59 rows=22089 width=40) (actual time=5.591..87.507 rows=22316 loops=1)
+  Recheck Cond: (customer_id < 3000)
+  Heap Blocks: exact=1548
+  Buffers: shared hit=90900
+  ->  Bitmap Index Scan on idx_orders_customer_placed  (cost=0.00..510.09 rows=22089 width=0) (actual time=0.891..0.891 rows=22316 loops=1)
+        Index Cond: (customer_id < 3000)
+        Buffers: shared hit=88
+  SubPlan 1
+    ->  Aggregate  (cost=13.77..13.78 rows=1 width=32) (actual time=0.003..0.003 rows=1 loops=22316)
+          Buffers: shared hit=89264
+          ->  Index Scan using uq_order_items_order_variant on order_items i  (cost=0.42..13.74 rows=4 width=12) (actual time=0.002..0.002 rows=3 loops=22316)
+                Index Cond: (order_id = o.order_id)
+                Buffers: shared hit=89264
+Planning Time: 0.151 ms
+JIT:
+  Functions: 12
+  Options: Inlining false, Optimization false, Expressions true, Deforming true
+  Timing: Generation 0.401 ms, Inlining 0.000 ms, Optimization 0.268 ms, Emission 4.255 ms, Total 4.925 ms
+Execution Time: 88.850 ms

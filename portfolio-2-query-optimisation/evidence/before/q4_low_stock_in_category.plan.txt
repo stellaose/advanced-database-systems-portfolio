@@ -1,0 +1,27 @@
+Sort  (cost=2188.81..2188.94 rows=51 width=43) (actual time=10.968..10.973 rows=54 loops=1)
+  Sort Key: i.quantity_on_hand, p.product_id
+  Sort Method: quicksort  Memory: 28kB
+  Buffers: shared hit=4298
+  ->  Nested Loop  (cost=642.05..2187.36 rows=51 width=43) (actual time=2.432..10.928 rows=54 loops=1)
+        Buffers: shared hit=4292
+        ->  Hash Join  (cost=641.76..1788.03 rows=1152 width=47) (actual time=1.998..8.955 rows=1147 loops=1)
+              Hash Cond: (v.product_id = p.product_id)
+              Buffers: shared hit=851
+              ->  Seq Scan on product_variants v  (cost=0.00..1015.00 rows=50000 width=27) (actual time=0.005..3.164 rows=50000 loops=1)
+                    Buffers: shared hit=515
+              ->  Hash  (cost=636.00..636.00 rows=461 width=28) (actual time=1.980..1.981 rows=456 loops=1)
+                    Buckets: 1024  Batches: 1  Memory Usage: 35kB
+                    Buffers: shared hit=336
+                    ->  Seq Scan on products p  (cost=0.00..636.00 rows=461 width=28) (actual time=0.008..1.908 rows=456 loops=1)
+                          Filter: ((category_id = 25) AND ((status)::text = 'live'::text))
+                          Rows Removed by Filter: 19544
+                          Buffers: shared hit=336
+        ->  Index Scan using inventory_pkey on inventory i  (cost=0.29..0.35 rows=1 width=12) (actual time=0.002..0.002 rows=0 loops=1147)
+              Index Cond: (variant_id = v.variant_id)
+              Filter: (quantity_on_hand < 10)
+              Rows Removed by Filter: 1
+              Buffers: shared hit=3441
+Planning:
+  Buffers: shared hit=201
+Planning Time: 0.567 ms
+Execution Time: 11.022 ms

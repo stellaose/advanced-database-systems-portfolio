@@ -1,0 +1,11 @@
+Bitmap Heap Scan on products  (cost=82.28..89.84 rows=2 width=33) (actual time=0.442..0.443 rows=1 loops=1)
+  Recheck Cond: ((name)::text ~~* '%laptop 1234%'::text)
+  Heap Blocks: exact=1
+  Buffers: shared hit=24
+  ->  Bitmap Index Scan on idx_products_name_trgm  (cost=0.00..82.28 rows=2 width=0) (actual time=0.399..0.399 rows=1 loops=1)
+        Index Cond: ((name)::text ~~* '%laptop 1234%'::text)
+        Buffers: shared hit=23
+Planning:
+  Buffers: shared hit=115
+Planning Time: 0.730 ms
+Execution Time: 0.521 ms
