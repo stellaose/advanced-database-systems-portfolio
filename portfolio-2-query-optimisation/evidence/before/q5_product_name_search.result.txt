@@ -1,0 +1,5 @@
+ product_id |         name          | status 
+------------+-----------------------+--------
+      12345 | Wireless Laptop 12345 | live
+(1 row)
+

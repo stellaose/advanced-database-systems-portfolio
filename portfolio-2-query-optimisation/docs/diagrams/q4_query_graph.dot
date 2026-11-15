@@ -1,0 +1,3 @@
+graph G { node [shape=ellipse,fontname="Helvetica"]; fontname="Helvetica"; label="Q4 query graph: nodes = relations (with selection constants), edges = join conditions"; labelloc=t;
+ p [label="products p\nσ category_id=25, status='live'"]; v [label="product_variants v"]; i [label="inventory i\nσ quantity_on_hand<10"];
+ p -- v [label="p.product_id = v.product_id"]; v -- i [label="v.variant_id = i.variant_id"]; }

@@ -1,0 +1,26 @@
+-- E2a JOIN + DISTINCT
+-- SELECT DISTINCT c.customer_id, c.full_name FROM konga.customers c JOIN konga.orders o ON o.customer_id = c.customer_id WHERE o.placed_at >= now() - interval '7 days'
+
+HashAggregate  (cost=3820.72..3844.88 rows=2416 width=22) (actual time=5.304..5.463 rows=2366 loops=1)
+  Group Key: c.customer_id, c.full_name
+  Batches: 1  Memory Usage: 369kB
+  Buffers: shared hit=1627
+  ->  Hash Join  (cost=824.15..3808.64 rows=2416 width=22) (actual time=3.469..4.854 rows=2536 loops=1)
+        Hash Cond: (o.customer_id = c.customer_id)
+        Buffers: shared hit=1627
+        ->  Bitmap Heap Scan on orders o  (cost=47.15..3025.30 rows=2416 width=8) (actual time=0.224..1.052 rows=2536 loops=1)
+              Recheck Cond: (placed_at >= (now() - '7 days'::interval))
+              Heap Blocks: exact=1290
+              Buffers: shared hit=1300
+              ->  Bitmap Index Scan on idx_orders_placed_at  (cost=0.00..46.55 rows=2416 width=0) (actual time=0.121..0.122 rows=2536 loops=1)
+                    Index Cond: (placed_at >= (now() - '7 days'::interval))
+                    Buffers: shared hit=10
+        ->  Hash  (cost=527.00..527.00 rows=20000 width=22) (actual time=3.228..3.228 rows=20000 loops=1)
+              Buckets: 32768  Batches: 1  Memory Usage: 1320kB
+              Buffers: shared hit=327
+              ->  Seq Scan on customers c  (cost=0.00..527.00 rows=20000 width=22) (actual time=0.003..1.196 rows=20000 loops=1)
+                    Buffers: shared hit=327
+Planning:
+  Buffers: shared hit=18
+Planning Time: 0.139 ms
+Execution Time: 5.557 ms

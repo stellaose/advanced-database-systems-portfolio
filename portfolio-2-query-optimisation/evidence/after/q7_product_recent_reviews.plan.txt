@@ -1,0 +1,17 @@
+Limit  (cost=15.77..15.78 rows=3 width=48) (actual time=0.115..0.117 rows=3 loops=1)
+  Buffers: shared hit=11
+  ->  Sort  (cost=15.77..15.78 rows=3 width=48) (actual time=0.087..0.088 rows=3 loops=1)
+        Sort Key: created_at DESC
+        Sort Method: quicksort  Memory: 25kB
+        Buffers: shared hit=11
+        ->  Bitmap Heap Scan on reviews  (cost=4.31..15.75 rows=3 width=48) (actual time=0.037..0.052 rows=3 loops=1)
+              Recheck Cond: (product_id = 777)
+              Heap Blocks: exact=3
+              Buffers: shared hit=8
+              ->  Bitmap Index Scan on idx_reviews_product_created  (cost=0.00..4.31 rows=3 width=0) (actual time=0.025..0.025 rows=3 loops=1)
+                    Index Cond: (product_id = 777)
+                    Buffers: shared hit=5
+Planning:
+  Buffers: shared hit=131
+Planning Time: 0.430 ms
+Execution Time: 0.154 ms

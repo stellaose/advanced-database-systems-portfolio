@@ -1,0 +1,18 @@
+-- E2c function on column: date_trunc('day', placed_at) = DATE
+-- SELECT count(*) FROM konga.orders WHERE date_trunc('day', placed_at) = date_trunc('day', now() - interval '30 days')
+
+Finalize Aggregate  (cost=4813.67..4813.68 rows=1 width=8) (actual time=32.754..32.813 rows=1 loops=1)
+  Buffers: shared hit=415
+  ->  Gather  (cost=4813.45..4813.66 rows=2 width=8) (actual time=30.829..32.807 rows=3 loops=1)
+        Workers Planned: 2
+        Workers Launched: 2
+        Buffers: shared hit=415
+        ->  Partial Aggregate  (cost=3813.45..3813.46 rows=1 width=8) (actual time=16.574..16.575 rows=1 loops=3)
+              Buffers: shared hit=415
+              ->  Parallel Index Only Scan using idx_orders_placed_at on orders  (cost=0.42..3812.67 rows=312 width=0) (actual time=15.649..16.566 rows=139 loops=3)
+                    Filter: (date_trunc('day'::text, placed_at) = date_trunc('day'::text, (now() - '30 days'::interval)))
+                    Rows Removed by Filter: 49861
+                    Heap Fetches: 0
+                    Buffers: shared hit=415
+Planning Time: 0.072 ms
+Execution Time: 32.830 ms

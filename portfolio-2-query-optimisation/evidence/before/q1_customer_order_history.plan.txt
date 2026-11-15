@@ -1,0 +1,12 @@
+Sort  (cost=4824.12..4824.14 rows=8 width=33) (actual time=7.570..7.571 rows=7 loops=1)
+  Sort Key: placed_at DESC
+  Sort Method: quicksort  Memory: 25kB
+  Buffers: shared hit=2952
+  ->  Seq Scan on orders  (cost=0.00..4824.00 rows=8 width=33) (actual time=1.618..7.545 rows=7 loops=1)
+        Filter: (customer_id = 12345)
+        Rows Removed by Filter: 149993
+        Buffers: shared hit=2949
+Planning:
+  Buffers: shared hit=92
+Planning Time: 0.294 ms
+Execution Time: 7.607 ms

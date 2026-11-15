@@ -1,0 +1,25 @@
+                                                QUERY PLAN                                                 
+-----------------------------------------------------------------------------------------------------------
+ Sort (actual rows=54 loops=1)
+   Sort Key: i.quantity_on_hand, p.product_id
+   Sort Method: quicksort  Memory: 28kB
+   ->  Hash Join (actual rows=54 loops=1)
+         Hash Cond: (v.variant_id = i.variant_id)
+         ->  Hash Join (actual rows=1147 loops=1)
+               Hash Cond: (v.product_id = p.product_id)
+               ->  Seq Scan on product_variants v (actual rows=50000 loops=1)
+               ->  Hash (actual rows=456 loops=1)
+                     Buckets: 1024  Batches: 1  Memory Usage: 35kB
+                     ->  Bitmap Heap Scan on products p (actual rows=456 loops=1)
+                           Recheck Cond: ((category_id = 25) AND ((status)::text = 'live'::text))
+                           Heap Blocks: exact=253
+                           ->  Bitmap Index Scan on idx_products_category_live (actual rows=456 loops=1)
+                                 Index Cond: (category_id = 25)
+         ->  Hash (actual rows=2289 loops=1)
+               Buckets: 4096  Batches: 1  Memory Usage: 140kB
+               ->  Index Only Scan using idx_inventory_low_stock on inventory i (actual rows=2289 loops=1)
+                     Heap Fetches: 0
+ Planning Time: 1.166 ms
+ Execution Time: 7.062 ms
+(21 rows)
+

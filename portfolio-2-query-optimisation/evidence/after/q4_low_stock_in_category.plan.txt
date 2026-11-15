@@ -1,0 +1,32 @@
+Sort  (cost=1628.90..1629.03 rows=50 width=43) (actual time=10.466..10.473 rows=54 loops=1)
+  Sort Key: i.quantity_on_hand, p.product_id
+  Sort Method: quicksort  Memory: 28kB
+  Buffers: shared hit=790
+  ->  Hash Join  (cost=478.20..1627.49 rows=50 width=43) (actual time=1.868..10.375 rows=54 loops=1)
+        Hash Cond: (v.variant_id = i.variant_id)
+        Buffers: shared hit=784
+        ->  Hash Join  (cost=374.24..1520.51 rows=1152 width=47) (actual time=0.920..9.542 rows=1147 loops=1)
+              Hash Cond: (v.product_id = p.product_id)
+              Buffers: shared hit=773
+              ->  Seq Scan on product_variants v  (cost=0.00..1015.00 rows=50000 width=27) (actual time=0.005..3.896 rows=50000 loops=1)
+                    Buffers: shared hit=515
+              ->  Hash  (cost=368.48..368.48 rows=461 width=28) (actual time=0.891..0.892 rows=456 loops=1)
+                    Buckets: 1024  Batches: 1  Memory Usage: 35kB
+                    Buffers: shared hit=258
+                    ->  Bitmap Heap Scan on products p  (cost=7.86..368.48 rows=461 width=28) (actual time=0.088..0.817 rows=456 loops=1)
+                          Recheck Cond: ((category_id = 25) AND ((status)::text = 'live'::text))
+                          Heap Blocks: exact=253
+                          Buffers: shared hit=258
+                          ->  Bitmap Index Scan on idx_products_category_live  (cost=0.00..7.74 rows=461 width=0) (actual time=0.057..0.057 rows=456 loops=1)
+                                Index Cond: (category_id = 25)
+                                Buffers: shared hit=5
+        ->  Hash  (cost=76.83..76.83 rows=2170 width=12) (actual time=0.596..0.596 rows=2289 loops=1)
+              Buckets: 4096  Batches: 1  Memory Usage: 140kB
+              Buffers: shared hit=11
+              ->  Index Only Scan using idx_inventory_low_stock on inventory i  (cost=0.28..76.83 rows=2170 width=12) (actual time=0.023..0.262 rows=2289 loops=1)
+                    Heap Fetches: 0
+                    Buffers: shared hit=11
+Planning:
+  Buffers: shared hit=285
+Planning Time: 0.977 ms
+Execution Time: 10.613 ms

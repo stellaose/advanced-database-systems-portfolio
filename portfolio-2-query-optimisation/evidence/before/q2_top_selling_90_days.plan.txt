@@ -1,0 +1,34 @@
+Limit  (cost=29417.03..29417.05 rows=10 width=27) (actual time=206.106..206.112 rows=10 loops=1)
+  Buffers: shared hit=7217
+  ->  Sort  (cost=29417.03..29665.97 rows=99576 width=27) (actual time=206.104..206.108 rows=10 loops=1)
+        Sort Key: (sum(oi.quantity)) DESC
+        Sort Method: top-N heapsort  Memory: 26kB
+        Buffers: shared hit=7217
+        ->  HashAggregate  (cost=25102.56..27265.22 rows=99576 width=27) (actual time=195.391..201.107 rows=41189 loops=1)
+              Group Key: oi.variant_id, v.sku
+              Batches: 1  Memory Usage: 5649kB
+              Buffers: shared hit=7214
+              ->  Hash Join  (cost=8003.90..17696.59 rows=99576 width=23) (actual time=49.863..163.493 rows=99414 loops=1)
+                    Hash Cond: (oi.variant_id = v.variant_id)
+                    Buffers: shared hit=7214
+                    ->  Hash Join  (cost=6363.90..15795.18 rows=99576 width=12) (actual time=31.455..117.917 rows=99414 loops=1)
+                          Hash Cond: (oi.order_id = o.order_id)
+                          Buffers: shared hit=6699
+                          ->  Seq Scan on order_items oi  (cost=0.00..8250.00 rows=450000 width=20) (actual time=0.007..28.056 rows=450000 loops=1)
+                                Buffers: shared hit=3750
+                          ->  Hash  (cost=5949.00..5949.00 rows=33192 width=8) (actual time=31.168..31.169 rows=33206 loops=1)
+                                Buckets: 65536  Batches: 1  Memory Usage: 1810kB
+                                Buffers: shared hit=2949
+                                ->  Seq Scan on orders o  (cost=0.00..5949.00 rows=33192 width=8) (actual time=1.371..25.465 rows=33206 loops=1)
+                                      Filter: (((status)::text <> 'cancelled'::text) AND (placed_at >= (now() - '90 days'::interval)))
+                                      Rows Removed by Filter: 116794
+                                      Buffers: shared hit=2949
+                    ->  Hash  (cost=1015.00..1015.00 rows=50000 width=19) (actual time=18.150..18.150 rows=50000 loops=1)
+                          Buckets: 65536  Batches: 1  Memory Usage: 3247kB
+                          Buffers: shared hit=515
+                          ->  Seq Scan on product_variants v  (cost=0.00..1015.00 rows=50000 width=19) (actual time=0.009..6.596 rows=50000 loops=1)
+                                Buffers: shared hit=515
+Planning:
+  Buffers: shared hit=225
+Planning Time: 1.041 ms
+Execution Time: 206.959 ms

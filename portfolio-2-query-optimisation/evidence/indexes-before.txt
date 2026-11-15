@@ -1,0 +1,6 @@
+uq_addresses_one_default
+uq_carts_one_open
+uq_order_items_order_variant
+uq_payouts_seller_period
+uq_reviews_customer_product
+uq_shipments_order_seller
