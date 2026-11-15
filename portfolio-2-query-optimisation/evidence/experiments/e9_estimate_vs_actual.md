@@ -4,12 +4,12 @@ Large gaps between estimated and actual rows point to outdated statistics or a p
 
 | Query | Median ms (1 run) | Worst node estimate error |
 |---|---|---|
-| Q1 | 0.048 | 1.1x (Bitmap Heap Scan on orders) |
-| Q2 | 160.377 | 2.4x (HashAggregate) |
-| Q3 | 3.766 | 35.9x (GroupAggregate) |
-| Q4 | 9.584 | 1.1x (Hash Join) |
-| Q5 | 8.212 | 2.0x (Seq Scan on products) |
-| Q6 | 0.077 | 1.0x () |
-| Q7 | 0.041 | 1.0x () |
-| Q8 | 139.125 | 1.0x (Hash Join) |
+| Q1 | 0.023 | 1.6x (Bitmap Heap Scan on orders) |
+| Q2 | 543.964 | 2.4x (Finalize GroupAggregate) |
+| Q3 | 23.351 | 39.0x (GroupAggregate) |
+| Q4 | 8.3 | 1.1x (Hash Join) |
+| Q5 | 0.102 | 2.0x (Bitmap Heap Scan on products) |
+| Q6 | 0.028 | 1.0x () |
+| Q7 | 0.023 | 1.0x () |
+| Q8 | 78.936 | 1.0x (HashAggregate) |
 

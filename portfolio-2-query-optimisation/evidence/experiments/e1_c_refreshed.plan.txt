@@ -1,11 +1,17 @@
 -- C. after ANALYZE (statistics refreshed)
--- SELECT count(*), sum(total_amount) FROM exp.ostat WHERE status = 'returned'
+-- SELECT count(*), sum(total_amount) FROM exp.ostat WHERE status = 'pending'
 
-Aggregate  (cost=4800.38..4800.39 rows=1 width=40) (actual time=24.492..24.492 rows=1 loops=1)
-  Buffers: shared hit=2388
-  ->  Seq Scan on ostat  (cost=0.00..4263.00 rows=107475 width=8) (actual time=0.005..11.658 rows=107282 loops=1)
-        Filter: ((status)::text = 'returned'::text)
-        Rows Removed by Filter: 42718
-        Buffers: shared hit=2388
-Planning Time: 0.057 ms
-Execution Time: 24.508 ms
+Finalize Aggregate  (cost=6192.21..6192.22 rows=1 width=40) (actual time=11.256..12.812 rows=1 loops=1)
+  Buffers: shared hit=4181
+  ->  Gather  (cost=6191.98..6192.19 rows=2 width=40) (actual time=11.169..12.806 rows=3 loops=1)
+        Workers Planned: 2
+        Workers Launched: 2
+        Buffers: shared hit=4181
+        ->  Partial Aggregate  (cost=5191.98..5191.99 rows=1 width=40) (actual time=9.019..9.019 rows=1 loops=3)
+              Buffers: shared hit=4181
+              ->  Parallel Seq Scan on ostat  (cost=0.00..4962.25 rows=45946 width=8) (actual time=0.006..5.985 rows=36509 loops=3)
+                    Filter: ((status)::text = 'pending'::text)
+                    Rows Removed by Filter: 13491
+                    Buffers: shared hit=4181
+Planning Time: 0.035 ms
+Execution Time: 12.822 ms

@@ -1,26 +1,26 @@
 -- E2a EXISTS (correlated)
 -- SELECT c.customer_id, c.full_name FROM konga.customers c WHERE EXISTS (SELECT 1 FROM konga.orders o WHERE o.customer_id = c.customer_id AND o.placed_at >= now() - interval '7 days')
 
-Hash Join  (cost=3082.75..3689.13 rows=2416 width=22) (actual time=1.838..4.593 rows=2366 loops=1)
-  Hash Cond: (c.customer_id = o.customer_id)
-  Buffers: shared hit=1627
-  ->  Seq Scan on customers c  (cost=0.00..527.00 rows=20000 width=22) (actual time=0.001..1.074 rows=20000 loops=1)
-        Buffers: shared hit=327
-  ->  Hash  (cost=3054.19..3054.19 rows=2285 width=8) (actual time=1.832..1.834 rows=2366 loops=1)
-        Buckets: 4096  Batches: 1  Memory Usage: 125kB
-        Buffers: shared hit=1300
-        ->  HashAggregate  (cost=3031.34..3054.19 rows=2285 width=8) (actual time=1.473..1.636 rows=2366 loops=1)
-              Group Key: o.customer_id
-              Batches: 1  Memory Usage: 241kB
-              Buffers: shared hit=1300
-              ->  Bitmap Heap Scan on orders o  (cost=47.15..3025.30 rows=2416 width=8) (actual time=0.261..1.127 rows=2536 loops=1)
+Hash Join  (cost=5218.68..5887.94 rows=2855 width=51) (actual time=1.914..5.066 rows=2566 loops=1)
+  Hash Cond: ((c.customer_id)::text = (o.customer_id)::text)
+  Buffers: shared hit=2287
+  ->  Seq Scan on customers c  (cost=0.00..585.00 rows=20000 width=51) (actual time=0.001..0.797 rows=20000 loops=1)
+        Buffers: shared hit=385
+  ->  Hash  (cost=5185.24..5185.24 rows=2675 width=37) (actual time=1.909..1.909 rows=2566 loops=1)
+        Buckets: 4096  Batches: 1  Memory Usage: 205kB
+        Buffers: shared hit=1902
+        ->  HashAggregate  (cost=5158.49..5185.24 rows=2675 width=37) (actual time=1.492..1.656 rows=2566 loops=1)
+              Group Key: (o.customer_id)::text
+              Batches: 1  Memory Usage: 625kB
+              Buffers: shared hit=1902
+              ->  Bitmap Heap Scan on orders o  (cost=54.55..5151.36 rows=2855 width=37) (actual time=0.405..1.030 rows=2770 loops=1)
                     Recheck Cond: (placed_at >= (now() - '7 days'::interval))
-                    Heap Blocks: exact=1290
-                    Buffers: shared hit=1300
-                    ->  Bitmap Index Scan on idx_orders_placed_at  (cost=0.00..46.55 rows=2416 width=0) (actual time=0.138..0.138 rows=2536 loops=1)
+                    Heap Blocks: exact=1892
+                    Buffers: shared hit=1902
+                    ->  Bitmap Index Scan on idx_orders_placed_at  (cost=0.00..53.84 rows=2855 width=0) (actual time=0.218..0.218 rows=2770 loops=1)
                           Index Cond: (placed_at >= (now() - '7 days'::interval))
                           Buffers: shared hit=10
 Planning:
   Buffers: shared hit=18
-Planning Time: 0.149 ms
-Execution Time: 4.703 ms
+Planning Time: 0.202 ms
+Execution Time: 5.154 ms

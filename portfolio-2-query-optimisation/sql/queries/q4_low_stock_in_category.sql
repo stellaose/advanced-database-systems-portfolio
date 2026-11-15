@@ -1,4 +1,4 @@
--- Q4: Live products in one category whose variants are low on stock (restock alert).
+-- Q4: Live products in one category with low stock (restock alert).
 SELECT p.product_id, p.name, v.sku, i.quantity_in_store
 FROM konga.products p
 JOIN konga.product_variants v ON v.product_id = p.product_id

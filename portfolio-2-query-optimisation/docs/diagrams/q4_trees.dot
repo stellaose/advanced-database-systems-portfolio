@@ -1,15 +1,15 @@
 digraph G { rankdir=BT; node [shape=box,fontname="Helvetica",fontsize=11]; labelloc=t; fontname="Helvetica";
  label="Q4 low stock in category: initial query tree (left) vs optimised tree (right)";
  subgraph cluster_a { label="Initial (as parsed)"; style=dashed;
-  p0 [label="π p.product_id, p.name, v.sku, i.quantity_on_hand"];
-  s0 [label="σ p.category_id=25 ∧ p.status='live' ∧ i.quantity_on_hand<10"];
+  p0 [label="π p.product_id, p.name, v.sku, i.quantity_in_store"];
+  s0 [label="σ p.category_id=25 ∧ p.status='live' ∧ i.quantity_in_store<10"];
   j1 [label="⋈ i.variant_id = v.variant_id"]; j0 [label="⋈ v.product_id = p.product_id"];
   P0 [label="products p",shape=ellipse]; V0 [label="product_variants v",shape=ellipse]; I0 [label="inventory i",shape=ellipse];
   P0->j0; V0->j0; j0->j1; I0->j1; j1->s0; s0->p0; }
  subgraph cluster_b { label="Optimised (selections and projections pushed down)"; style=dashed;
-  p1 [label="π p.product_id, p.name, v.sku, i.quantity_on_hand"];
+  p1 [label="π p.product_id, p.name, v.sku, i.quantity_in_store"];
   k1 [label="⋈ v.variant_id = i.variant_id"]; k0 [label="⋈ p.product_id = v.product_id"];
-  sp [label="σ category_id=25 ∧ status='live'"]; si [label="σ quantity_on_hand<10"];
+  sp [label="σ category_id=25 ∧ status='live'"]; si [label="σ quantity_in_store<10"];
   P1 [label="products p",shape=ellipse]; V1 [label="product_variants v",shape=ellipse]; I1 [label="inventory i",shape=ellipse];
   P1->sp; I1->si; sp->k0; V1->k0; k0->k1; si->k1; k1->p1; }
 }

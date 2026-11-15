@@ -1,34 +1,46 @@
-Limit  (cost=29417.03..29417.05 rows=10 width=27) (actual time=206.106..206.112 rows=10 loops=1)
-  Buffers: shared hit=7217
-  ->  Sort  (cost=29417.03..29665.97 rows=99576 width=27) (actual time=206.104..206.108 rows=10 loops=1)
-        Sort Key: (sum(oi.quantity)) DESC
-        Sort Method: top-N heapsort  Memory: 26kB
-        Buffers: shared hit=7217
-        ->  HashAggregate  (cost=25102.56..27265.22 rows=99576 width=27) (actual time=195.391..201.107 rows=41189 loops=1)
+Limit  (cost=39166.56..39166.58 rows=10 width=56) (actual time=549.290..549.429 rows=10 loops=1)
+  Buffers: shared hit=6594 read=10725
+  ->  Sort  (cost=39166.56..39416.96 rows=100161 width=56) (actual time=549.289..549.428 rows=10 loops=1)
+        Sort Key: (sum(oi.quantity)) DESC, oi.variant_id
+        Sort Method: top-N heapsort  Memory: 27kB
+        Buffers: shared hit=6594 read=10725
+        ->  Finalize GroupAggregate  (cost=24905.54..37002.11 rows=100161 width=56) (actual time=436.611..544.391 rows=41189 loops=1)
               Group Key: oi.variant_id, v.sku
-              Batches: 1  Memory Usage: 5649kB
-              Buffers: shared hit=7214
-              ->  Hash Join  (cost=8003.90..17696.59 rows=99576 width=23) (actual time=49.863..163.493 rows=99414 loops=1)
-                    Hash Cond: (oi.variant_id = v.variant_id)
-                    Buffers: shared hit=7214
-                    ->  Hash Join  (cost=6363.90..15795.18 rows=99576 width=12) (actual time=31.455..117.917 rows=99414 loops=1)
-                          Hash Cond: (oi.order_id = o.order_id)
-                          Buffers: shared hit=6699
-                          ->  Seq Scan on order_items oi  (cost=0.00..8250.00 rows=450000 width=20) (actual time=0.007..28.056 rows=450000 loops=1)
-                                Buffers: shared hit=3750
-                          ->  Hash  (cost=5949.00..5949.00 rows=33192 width=8) (actual time=31.168..31.169 rows=33206 loops=1)
-                                Buckets: 65536  Batches: 1  Memory Usage: 1810kB
-                                Buffers: shared hit=2949
-                                ->  Seq Scan on orders o  (cost=0.00..5949.00 rows=33192 width=8) (actual time=1.371..25.465 rows=33206 loops=1)
-                                      Filter: (((status)::text <> 'cancelled'::text) AND (placed_at >= (now() - '90 days'::interval)))
-                                      Rows Removed by Filter: 116794
-                                      Buffers: shared hit=2949
-                    ->  Hash  (cost=1015.00..1015.00 rows=50000 width=19) (actual time=18.150..18.150 rows=50000 loops=1)
-                          Buckets: 65536  Batches: 1  Memory Usage: 3247kB
-                          Buffers: shared hit=515
-                          ->  Seq Scan on product_variants v  (cost=0.00..1015.00 rows=50000 width=19) (actual time=0.009..6.596 rows=50000 loops=1)
-                                Buffers: shared hit=515
+              Buffers: shared hit=6594 read=10725
+              ->  Gather Merge  (cost=24905.54..35374.49 rows=83468 width=56) (actual time=436.603..530.480 rows=70705 loops=1)
+                    Workers Planned: 2
+                    Workers Launched: 2
+                    Buffers: shared hit=6594 read=10725
+                    ->  Partial GroupAggregate  (cost=23905.51..24740.19 rows=41734 width=56) (actual time=423.885..433.011 rows=23568 loops=3)
+                          Group Key: oi.variant_id, v.sku
+                          Buffers: shared hit=6594 read=10725
+                          ->  Sort  (cost=23905.51..24009.85 rows=41734 width=52) (actual time=423.875..424.994 rows=33138 loops=3)
+                                Sort Key: oi.variant_id, v.sku
+                                Sort Method: quicksort  Memory: 3966kB
+                                Buffers: shared hit=6594 read=10725
+                                Worker 0:  Sort Method: quicksort  Memory: 3905kB
+                                Worker 1:  Sort Method: quicksort  Memory: 3908kB
+                                ->  Hash Join  (cost=9571.89..20702.65 rows=41734 width=52) (actual time=26.133..72.604 rows=33138 loops=3)
+                                      Hash Cond: ((oi.variant_id)::text = (v.variant_id)::text)
+                                      Buffers: shared hit=6520 read=10725
+                                      ->  Parallel Hash Join  (cost=7676.89..18698.09 rows=41734 width=41) (actual time=15.216..52.743 rows=33138 loops=3)
+                                            Hash Cond: ((oi.order_id)::text = (o.order_id)::text)
+                                            Buffers: shared hit=4182 read=10725
+                                            ->  Parallel Seq Scan on order_items oi  (cost=0.00..10529.00 rows=187500 width=78) (actual time=0.066..16.879 rows=150000 loops=3)
+                                                  Buffers: shared hit=320 read=8334
+                                            ->  Parallel Hash  (cost=7503.00..7503.00 rows=13911 width=37) (actual time=15.081..15.081 rows=11069 loops=3)
+                                                  Buckets: 65536  Batches: 1  Memory Usage: 2880kB
+                                                  Buffers: shared hit=3862 read=2391
+                                                  ->  Parallel Seq Scan on orders o  (cost=0.00..7503.00 rows=13911 width=37) (actual time=0.360..12.813 rows=11069 loops=3)
+                                                        Filter: (((status)::text <> 'cancelled'::text) AND (placed_at >= (now() - '90 days'::interval)))
+                                                        Rows Removed by Filter: 38931
+                                                        Buffers: shared hit=3862 read=2391
+                                      ->  Hash  (cost=1270.00..1270.00 rows=50000 width=48) (actual time=10.870..10.870 rows=50000 loops=3)
+                                            Buckets: 65536  Batches: 1  Memory Usage: 4419kB
+                                            Buffers: shared hit=2310
+                                            ->  Seq Scan on product_variants v  (cost=0.00..1270.00 rows=50000 width=48) (actual time=0.030..4.518 rows=50000 loops=3)
+                                                  Buffers: shared hit=2310
 Planning:
-  Buffers: shared hit=225
-Planning Time: 1.041 ms
-Execution Time: 206.959 ms
+  Buffers: shared hit=40
+Planning Time: 0.415 ms
+Execution Time: 549.498 ms

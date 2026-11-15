@@ -1,14 +1,14 @@
 -- B. STALE statistics after the data changed
--- SELECT count(*), sum(total_amount) FROM exp.ostat WHERE status = 'returned'
+-- SELECT count(*), sum(total_amount) FROM exp.ostat WHERE status = 'pending'
 
-Aggregate  (cost=2759.92..2759.93 rows=1 width=40) (actual time=19.217..19.218 rows=1 loops=1)
-  Buffers: shared hit=2468
-  ->  Bitmap Heap Scan on ostat  (cost=144.85..2695.04 rows=12975 width=8) (actual time=1.601..8.584 rows=107282 loops=1)
-        Recheck Cond: ((status)::text = 'returned'::text)
-        Heap Blocks: exact=2377
-        Buffers: shared hit=2468
-        ->  Bitmap Index Scan on ostat_status_idx  (cost=0.00..141.61 rows=12975 width=0) (actual time=1.401..1.401 rows=112610 loops=1)
-              Index Cond: ((status)::text = 'returned'::text)
-              Buffers: shared hit=91
-Planning Time: 0.051 ms
-Execution Time: 19.237 ms
+Aggregate  (cost=4907.87..4907.88 rows=1 width=40) (actual time=19.240..19.241 rows=1 loops=1)
+  Buffers: shared hit=4276
+  ->  Bitmap Heap Scan on ostat  (cost=284.29..4781.42 rows=25290 width=8) (actual time=2.280..9.018 rows=109527 loops=1)
+        Recheck Cond: ((status)::text = 'pending'::text)
+        Heap Blocks: exact=4179
+        Buffers: shared hit=4276
+        ->  Bitmap Index Scan on ostat_status_idx  (cost=0.00..277.97 rows=25290 width=0) (actual time=1.860..1.860 rows=119903 loops=1)
+              Index Cond: ((status)::text = 'pending'::text)
+              Buffers: shared hit=97
+Planning Time: 0.022 ms
+Execution Time: 19.249 ms

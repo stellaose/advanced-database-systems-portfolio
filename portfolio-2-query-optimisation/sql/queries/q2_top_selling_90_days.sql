@@ -1,4 +1,5 @@
--- Q2: Most units ordered in the last 90 days, excluding cancelled orders.
+-- Q2: Find the product variations with the most units ordered in the last 90 days, asides cancellations.
+
 SELECT oi.variant_id, v.sku, sum(oi.quantity) AS units_sold
 FROM konga.orders o
 JOIN konga.order_items oi ON oi.order_id = o.order_id

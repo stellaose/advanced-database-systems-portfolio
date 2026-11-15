@@ -1,0 +1,19 @@
+DURABILITY TEST  (2026-11-14 23:19:50 UTC)
+
+### 1. Commit one change; start a second change and leave it uncommitted
+   committed: variant 4 on_hand set to 111
+   uncommitted: a second session has set it to 222 but not committed (visible only to itself)
+ before crash, other sessions see: 111
+
+
+### 2. Crash the server
+   >> server killed with SIGKILL (no clean shutdown, no checkpoint)
+
+### 3. Restart and look at what survived
+ after crash recovery: 111  (111 = committed change kept, 222 = uncommitted change lost)
+
+   server log lines from recovery:
+   2026-11-14 23:19:54.308 UTC [1778] LOG:  database system was not properly shut down; automatic recovery in progress
+   2026-11-14 23:19:54.309 UTC [1778] LOG:  redo starts at 0/54BC9410
+   2026-11-14 23:19:54.309 UTC [1778] LOG:  redo done at 0/54BCAE10 system usage: CPU: user: 0.00 s, system: 0.00 s, elapsed: 0.00 s
+   2026-11-14 23:19:54.318 UTC [1775] LOG:  database system is ready to accept connections

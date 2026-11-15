@@ -1,0 +1,56 @@
+TWO-PHASE COMMIT TEST  (2026-11-14 23:19:54 UTC)
+Two databases stand for two services: konga_p1 (orders + stock) and konga_pay (payment ledger).
+Goal: 'reserve stock + create order' and 'record payment' must both happen or neither.
+
+### CASE 1: both participants vote YES, coordinator commits both
+   Phase 1 done: both branches PREPARED (promise to commit, nothing visible yet).
+ orders branch sees test orders: 0
+
+    gid     | database  
+------------+-----------
+ order_tx_1 | konga_p1
+ pay_tx_1   | konga_pay
+(2 rows)
+
+    gid     | database  
+------------+-----------
+ order_tx_1 | konga_p1
+ pay_tx_1   | konga_pay
+(2 rows)
+
+   While prepared, the locks are still held. Another session tries to change the same stock row (lock_timeout 1s):
+   ERROR:  canceling statement due to lock timeout
+   Phase 2: coordinator commits both.
+ orders: 1 test order(s), variant 4 reserved = 1
+
+ ledger: 1 entry
+
+
+### CASE 2: second participant votes NO (payment rejected); coordinator rolls back the first
+   orders branch: PREPARED (vote yes)
+   payment branch: ERROR:  new row for relation "ledger" violates check constraint "ledger_amount_check"
+   payment branch could not prepare (vote no). Coordinator aborts the prepared orders branch:
+ orders: 1 test order(s) (still 1 from case 1), variant 4 reserved = 1
+
+ ledger: 1 entry (still 1 from case 1)
+
+
+### CASE 3: crash while both branches are prepared (the 'in-doubt' state)
+   both branches prepared; now the server crashes before the coordinator can send COMMIT.
+   >> server killed with SIGKILL (no clean shutdown, no checkpoint)
+   after restart, the prepared transactions are still there (they were written to the WAL):
+    gid     | database  
+------------+-----------
+ order_tx_3 | konga_p1
+ pay_tx_3   | konga_pay
+(2 rows)
+
+ visible orders: 1 (only case 1; case 3 order is still invisible because it is not committed)
+
+   coordinator recovers and finishes phase 2:
+ orders: 2 test orders, variant 4 reserved = 2
+
+ ledger: 2 entries
+
+ prepared transactions left: 0
+

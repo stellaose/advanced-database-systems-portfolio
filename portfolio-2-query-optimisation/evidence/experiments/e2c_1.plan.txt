@@ -1,11 +1,11 @@
 -- E2c range on the bare column (rewritten)
 -- SELECT count(*) FROM konga.orders WHERE placed_at >= date_trunc('day', now() - interval '30 days') AND placed_at < date_trunc('day', now() - interval '29 days')
 
-Aggregate  (cost=17.34..17.36 rows=1 width=8) (actual time=0.061..0.062 rows=1 loops=1)
+Aggregate  (cost=17.95..17.96 rows=1 width=8) (actual time=0.045..0.045 rows=1 loops=1)
   Buffers: shared hit=5
-  ->  Index Only Scan using idx_orders_placed_at on orders  (cost=0.43..16.36 rows=396 width=0) (actual time=0.015..0.041 rows=418 loops=1)
+  ->  Index Only Scan using idx_orders_placed_at on orders  (cost=0.43..16.89 rows=423 width=0) (actual time=0.008..0.031 rows=408 loops=1)
         Index Cond: ((placed_at >= date_trunc('day'::text, (now() - '30 days'::interval))) AND (placed_at < date_trunc('day'::text, (now() - '29 days'::interval))))
         Heap Fetches: 0
         Buffers: shared hit=5
-Planning Time: 0.052 ms
-Execution Time: 0.072 ms
+Planning Time: 0.058 ms
+Execution Time: 0.052 ms

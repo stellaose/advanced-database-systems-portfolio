@@ -1,0 +1,16 @@
+digraph konga { rankdir=LR; fontname="Helvetica"; node [fontname="Helvetica", fontsize=11, shape=box, style="rounded,filled", fillcolor="#f4f4f4"]; edge [fontname="Helvetica", fontsize=9];
+ labelloc=t; label="Konga target architecture (solid = built and tested in this portfolio set; dashed = design only)";
+ users [label="Shoppers and sellers\n(web, mobile)", shape=ellipse];
+ app [label="Application servers\n(stateless)"];
+ redis [label="Redis\nsessions, carts, cache\n(Portfolio 4, tested)", fillcolor="#e3f1e3"];
+ coord [label="Coordinator\npartitioned orders table\n(postgres_fdw)", fillcolor="#e3f1e3"];
+ s1 [label="Shard: Lagos\norders", fillcolor="#e3f1e3"]; s2 [label="Shard: Abuja\norders", fillcolor="#e3f1e3"];
+ pri [label="PostgreSQL primary\nstock, payments, catalogue\n(Portfolios 1-3, tested)", fillcolor="#e3f1e3"];
+ rep [label="Streaming replica\nread-only reports\n(tested)", fillcolor="#e3f1e3"];
+ doc [label="Document store\nproduct attributes\n(FerretDB, tested)", fillcolor="#e3f1e3"];
+ gdb [label="Graph store\nrecommendations\n(LadybugDB, tested)", fillcolor="#e3f1e3"];
+ cass [label="Wide-column store\nshipment events\n(Cassandra, DESIGN ONLY)", style="rounded,dashed", fillcolor="#fff3d6"];
+ cloud [label="Managed cloud database service\n(possible deployment, DESIGN ONLY)", style="rounded,dashed", fillcolor="#fff3d6"];
+ users -> app; app -> redis; app -> pri [label="writes, ACID"]; app -> rep [label="reads (may be stale)"]; app -> coord; coord -> s1; coord -> s2;
+ pri -> rep [label="WAL stream (async)"]; app -> doc; app -> gdb; app -> cass [style=dashed]; pri -> cloud [style=dashed, arrowhead=none, label="could run as"];
+}

@@ -1,16 +1,18 @@
+BEGIN
 SET
---- F1: order totals equal the sum of their items less any coupon discount (percentage or fixed)
-psql:sql/05_functional_and_security_tests.sql:16: NOTICE:  F1 passed
+CREATE FUNCTION
+psql:sql/03_constraint_tests.sql:116: NOTICE:  PASS T1: duplicate customer email
+psql:sql/03_constraint_tests.sql:116: NOTICE:  PASS T2: negative product variation price
+psql:sql/03_constraint_tests.sql:116: NOTICE:  PASS T3: address references a missing customer
+psql:sql/03_constraint_tests.sql:116: NOTICE:  PASS T4: review rating above 5
+psql:sql/03_constraint_tests.sql:116: NOTICE:  PASS T5: second default address
+psql:sql/03_constraint_tests.sql:116: NOTICE:  PASS T6: reserved stock exceeds stock on hand
+psql:sql/03_constraint_tests.sql:116: NOTICE:  PASS T7: zero cart item quantity
+psql:sql/03_constraint_tests.sql:116: NOTICE:  PASS T8: duplicate SKU
+psql:sql/03_constraint_tests.sql:116: NOTICE:  PASS T9: second open cart
+psql:sql/03_constraint_tests.sql:116: NOTICE:  PASS T10: successful payment without payment date
+psql:sql/03_constraint_tests.sql:116: NOTICE:  PASS T11: deleting a seller with a product
+psql:sql/03_constraint_tests.sql:116: NOTICE:  PASS T12: percentage discount above 100
+psql:sql/03_constraint_tests.sql:116: NOTICE:  All 12 constraint tests passed.
 DO
---- F2: every order has at least one item (no orphan orders)
-psql:sql/05_functional_and_security_tests.sql:23: NOTICE:  F2 passed
-DO
---- F3: referential integrity - no order points to a missing customer/address
-psql:sql/05_functional_and_security_tests.sql:32: NOTICE:  F3 passed
-DO
---- F4: view v_order_summary returns one row per order with correct line counts
-psql:sql/05_functional_and_security_tests.sql:40: ERROR:  relation "v_order_summary" does not exist
-LINE 1: SELECT count(*)             FROM v_order_summary
-                                         ^
-QUERY:  SELECT count(*)             FROM v_order_summary
-CONTEXT:  PL/pgSQL function inline_code_block line 2 at SQL statement
+ROLLBACK

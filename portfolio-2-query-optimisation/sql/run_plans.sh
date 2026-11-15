@@ -1,6 +1,4 @@
-#!/usr/bin/env bash
-# Usage: PGDATABASE=konga_p2 bash sql/run_plans.sh before|after
-# One warm-up, then three measurements. Plans and results use the same snapshot.
+
 set -euo pipefail
 LABEL=${1:?label required (before|after)}
 case "$LABEL" in before|after) ;; *) echo 'Label must be before or after' >&2; exit 1 ;; esac

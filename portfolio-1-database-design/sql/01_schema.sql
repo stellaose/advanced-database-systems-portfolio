@@ -91,7 +91,7 @@ CREATE TRIGGER trg_create_inventory_record
 AFTER INSERT ON product_variants
 FOR EACH ROW EXECUTE FUNCTION create_inventory_record();
 
--- ! A deferred check also prevents deleting the mandatory stock record.
+-- Check at the end of the transaction that each product variation still has stock records.
 CREATE FUNCTION check_inventory_record() RETURNS TRIGGER
 LANGUAGE plpgsql SET search_path = konga, pg_temp AS $$
 BEGIN
@@ -115,7 +115,7 @@ CREATE TABLE carts (
 );
 CREATE UNIQUE INDEX uq_carts_open ON carts(customer_id) WHERE status = 'open';
 
---  # IN_CART relationship and its quantity attribute.
+-- Store the quantity of each product variation in a cart.
 CREATE TABLE cart_items (
     cart_id VARCHAR(36) NOT NULL REFERENCES carts(cart_id) ON DELETE CASCADE,
     variant_id VARCHAR(36) NOT NULL REFERENCES product_variants(variant_id),
@@ -142,13 +142,13 @@ CREATE TABLE orders (
     placed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     status VARCHAR(20) NOT NULL DEFAULT 'pending'
         CHECK (status IN ('pending', 'paid', 'processing', 'shipped', 'delivered', 'cancelled')),
-    -- * Checkout must calculate this from order items and any applicable coupon
+    -- Checkout calculates the total from the items and any coupon discount
     -- within the same transaction. A CHECK cannot verify a cross-table total.
     total_amount NUMERIC(12,2) NOT NULL CHECK (total_amount >= 0),
     FOREIGN KEY (customer_id, shipping_address_id) REFERENCES addresses(customer_id, address_id)
 );
 
--- ` CONTAINS relationship: retain the price at the time of purchase.
+-- Store each purchased product variation with its quantity and purchase price.
 CREATE TABLE order_items (
     order_item_id VARCHAR(36) PRIMARY KEY DEFAULT gen_random_uuid()::text,
     order_id VARCHAR(36) NOT NULL REFERENCES orders(order_id),

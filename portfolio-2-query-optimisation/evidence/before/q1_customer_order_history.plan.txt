@@ -1,12 +1,16 @@
-Sort  (cost=4824.12..4824.14 rows=8 width=33) (actual time=7.570..7.571 rows=7 loops=1)
-  Sort Key: placed_at DESC
-  Sort Method: quicksort  Memory: 25kB
-  Buffers: shared hit=2952
-  ->  Seq Scan on orders  (cost=0.00..4824.00 rows=8 width=33) (actual time=1.618..7.545 rows=7 loops=1)
-        Filter: (customer_id = 12345)
-        Rows Removed by Filter: 149993
-        Buffers: shared hit=2949
-Planning:
-  Buffers: shared hit=92
-Planning Time: 0.294 ms
-Execution Time: 7.607 ms
+Gather Merge  (cost=8034.30..8035.00 rows=6 width=62) (actual time=9.438..11.113 rows=5 loops=1)
+  Workers Planned: 2
+  Workers Launched: 2
+  Buffers: shared hit=3456 read=2871
+  ->  Sort  (cost=7034.27..7034.28 rows=3 width=62) (actual time=7.257..7.257 rows=2 loops=3)
+        Sort Key: placed_at DESC
+        Sort Method: quicksort  Memory: 25kB
+        Buffers: shared hit=3456 read=2871
+        Worker 0:  Sort Method: quicksort  Memory: 25kB
+        Worker 1:  Sort Method: quicksort  Memory: 25kB
+        ->  Parallel Seq Scan on orders  (cost=0.00..7034.25 rows=3 width=62) (actual time=4.313..7.220 rows=2 loops=3)
+              Filter: ((customer_id)::text = '00000001-0000-4000-8000-000000001234'::text)
+              Rows Removed by Filter: 49998
+              Buffers: shared hit=3382 read=2871
+Planning Time: 0.034 ms
+Execution Time: 11.129 ms

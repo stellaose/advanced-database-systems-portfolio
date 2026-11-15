@@ -1,14 +1,12 @@
-Limit  (cost=1422.02..1422.03 rows=3 width=48) (actual time=4.843..4.845 rows=3 loops=1)
-  Buffers: shared hit=675
-  ->  Sort  (cost=1422.02..1422.03 rows=3 width=48) (actual time=4.841..4.842 rows=3 loops=1)
+Limit  (cost=2074.02..2074.03 rows=3 width=106) (actual time=4.024..4.024 rows=3 loops=1)
+  Buffers: shared hit=1324
+  ->  Sort  (cost=2074.02..2074.03 rows=3 width=106) (actual time=4.023..4.024 rows=3 loops=1)
         Sort Key: created_at DESC
         Sort Method: quicksort  Memory: 25kB
-        Buffers: shared hit=675
-        ->  Seq Scan on reviews  (cost=0.00..1422.00 rows=3 width=48) (actual time=0.678..4.820 rows=3 loops=1)
-              Filter: (product_id = 777)
+        Buffers: shared hit=1324
+        ->  Seq Scan on reviews  (cost=0.00..2074.00 rows=3 width=106) (actual time=0.496..4.022 rows=3 loops=1)
+              Filter: ((product_id)::text = '00000006-0000-4000-8000-000000000777'::text)
               Rows Removed by Filter: 59997
-              Buffers: shared hit=672
-Planning:
-  Buffers: shared hit=110
-Planning Time: 0.302 ms
-Execution Time: 4.868 ms
+              Buffers: shared hit=1324
+Planning Time: 0.021 ms
+Execution Time: 4.029 ms

@@ -1,42 +1,42 @@
 -- Seller x month revenue report on base tables
 -- SELECT p.seller_id, date_trunc('month', o.placed_at) AS month, sum(oi.quantity * oi.unit_price) AS revenue FROM konga.orders o JOIN konga.order_items oi ON oi.order_id = o.order_id JOIN konga.product_variants v ON v.variant_id = oi.variant_id JOIN konga.products p ON p.product_id = v.product_id WHERE o.status = 'delivered' GROUP BY p.seller_id, date_trunc('month', o.placed_at) ORDER BY 1, 2 LIMIT 20
 
-Limit  (cost=419.89..437.68 rows=20 width=48) (actual time=2.066..5.471 rows=20 loops=1)
-  Buffers: shared hit=8885
-  ->  GroupAggregate  (cost=419.89..219074.98 rows=245805 width=48) (actual time=2.065..5.468 rows=20 loops=1)
+Limit  (cost=611.68..635.32 rows=20 width=77) (actual time=9.758..27.496 rows=20 loops=1)
+  Buffers: shared hit=8951
+  ->  GroupAggregate  (cost=611.68..316083.55 rows=266880 width=77) (actual time=9.758..27.495 rows=20 loops=1)
         Group Key: p.seller_id, (date_trunc('month'::text, o.placed_at))
-        Buffers: shared hit=8885
-        ->  Incremental Sort  (cost=419.89..212315.34 rows=245805 width=28) (actual time=2.052..5.308 rows=608 loops=1)
+        Buffers: shared hit=8951
+        ->  Incremental Sort  (cost=611.68..308744.35 rows=266880 width=57) (actual time=9.752..27.326 rows=665 loops=1)
               Sort Key: p.seller_id, (date_trunc('month'::text, o.placed_at))
               Presorted Key: p.seller_id
-              Full-sort Groups: 2  Sort Method: quicksort  Average Memory: 28kB  Peak Memory: 28kB
-              Pre-sorted Groups: 2  Sort Method: quicksort  Average Memory: 41kB  Peak Memory: 41kB
-              Buffers: shared hit=8885
-              ->  Nested Loop  (cost=1.43..198243.61 rows=245805 width=28) (actual time=0.051..5.112 rows=867 loops=1)
-                    Buffers: shared hit=8885
-                    ->  Nested Loop  (cost=1.00..65056.27 rows=450000 width=28) (actual time=0.023..1.605 rows=1606 loops=1)
-                          Buffers: shared hit=2461
-                          ->  Nested Loop  (cost=0.58..11682.27 rows=50000 width=16) (actual time=0.017..0.247 rows=164 loops=1)
-                                Buffers: shared hit=363
-                                ->  Index Scan using idx_products_seller on products p  (cost=0.29..1724.27 rows=20000 width=16) (actual time=0.010..0.044 rows=67 loops=1)
-                                      Buffers: shared hit=65
-                                ->  Index Scan using idx_variants_product on product_variants v  (cost=0.29..0.47 rows=3 width=16) (actual time=0.002..0.002 rows=2 loops=67)
-                                      Index Cond: (product_id = p.product_id)
-                                      Buffers: shared hit=298
-                          ->  Index Scan using idx_order_items_variant on order_items oi  (cost=0.42..0.96 rows=11 width=28) (actual time=0.002..0.007 rows=10 loops=164)
-                                Index Cond: (variant_id = v.variant_id)
+              Full-sort Groups: 2  Sort Method: quicksort  Average Memory: 31kB  Peak Memory: 31kB
+              Pre-sorted Groups: 2  Sort Method: quicksort  Average Memory: 61kB  Peak Memory: 64kB
+              Buffers: shared hit=8951
+              ->  Nested Loop  (cost=1.55..285759.30 rows=266880 width=57) (actual time=0.105..27.120 rows=958 loops=1)
+                    Buffers: shared hit=8951
+                    ->  Nested Loop  (cost=1.12..89233.26 rows=450000 width=86) (actual time=0.030..3.618 rows=1606 loops=1)
+                          Buffers: shared hit=2527
+                          ->  Nested Loop  (cost=0.70..16718.26 rows=50000 width=74) (actual time=0.016..0.874 rows=164 loops=1)
+                                Buffers: shared hit=429
+                                ->  Index Scan using idx_products_seller on products p  (cost=0.29..2880.26 rows=20000 width=74) (actual time=0.003..0.020 rows=67 loops=1)
+                                      Buffers: shared hit=64
+                                ->  Index Scan using idx_variants_product on product_variants v  (cost=0.41..0.66 rows=3 width=74) (actual time=0.012..0.012 rows=2 loops=67)
+                                      Index Cond: ((product_id)::text = (p.product_id)::text)
+                                      Buffers: shared hit=365
+                          ->  Index Scan using idx_order_items_variant on order_items oi  (cost=0.42..1.35 rows=10 width=86) (actual time=0.013..0.015 rows=10 loops=164)
+                                Index Cond: ((variant_id)::text = (v.variant_id)::text)
                                 Buffers: shared hit=2098
-                    ->  Memoize  (cost=0.43..0.48 rows=1 width=16) (actual time=0.002..0.002 rows=1 loops=1606)
+                    ->  Memoize  (cost=0.43..0.52 rows=1 width=45) (actual time=0.014..0.014 rows=1 loops=1606)
                           Cache Key: oi.order_id
                           Cache Mode: logical
-                          Hits: 0  Misses: 1606  Evictions: 0  Overflows: 0  Memory Usage: 154kB
+                          Hits: 0  Misses: 1606  Evictions: 0  Overflows: 0  Memory Usage: 231kB
                           Buffers: shared hit=6424
-                          ->  Index Scan using orders_pkey on orders o  (cost=0.42..0.47 rows=1 width=16) (actual time=0.002..0.002 rows=1 loops=1606)
-                                Index Cond: (order_id = oi.order_id)
+                          ->  Index Scan using orders_pkey on orders o  (cost=0.42..0.51 rows=1 width=45) (actual time=0.014..0.014 rows=1 loops=1606)
+                                Index Cond: ((order_id)::text = (oi.order_id)::text)
                                 Filter: ((status)::text = 'delivered'::text)
                                 Rows Removed by Filter: 0
                                 Buffers: shared hit=6424
 Planning:
-  Buffers: shared hit=42
-Planning Time: 0.550 ms
-Execution Time: 5.710 ms
+  Buffers: shared hit=78
+Planning Time: 0.586 ms
+Execution Time: 27.541 ms

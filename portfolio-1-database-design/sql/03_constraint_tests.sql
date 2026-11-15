@@ -41,7 +41,7 @@ DECLARE
     email TEXT := customer || '@constraint-test.example';
     sku TEXT := 'TEST-' || variation;
 BEGIN
-    -- Independent fixtures are removed by the final ROLLBACK.
+    -- Create separate test records. The final ROLLBACK removes them.
     INSERT INTO customers (customer_id, email_address, phone_number, full_name, password_hash)
     VALUES (customer, email, left(customer, 20), 'Constraint Test', 'synthetic-test-hash');
     INSERT INTO sellers (seller_id, business_name, email_address)

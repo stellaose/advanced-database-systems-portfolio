@@ -11,9 +11,9 @@ _Study Session 1: normalisation organises data to reduce redundancy and avoid an
 | Ensure data integrity                          | Primary key, foreign key, UNIQUE and CHECK constraints, tested in `../evidence/constraint-tests-output.txt`                                                        |
 | Enhance query performance                      | Smaller tables and targeted indexes (Portfolio 2). A few columns are denormalised on purpose; see [section 5](#5-deliberate-exceptions-controlled-denormalisation) |
 
-I followed the same method as the study session's worked example, where a student/course/instructor table is split into students, courses and instructors: find the dependencies, then split until each fact is stored in one place.
+I used the approach from the study session’s student/course/instructor example: identify which attributes depend on each key, then separate facts that belong to different entities.
 
-I started from the kind of flat "order sheet" a first attempt at the design might produce. I normalised it step by step to 3NF and then checked it against BCNF. Table and column names match [`01_schema.sql`](../sql/01_schema.sql).
+I started from the kind of flat "order sheet" a first attempt at the design might produce. I normalised it step by step to 3NF and then checked it against BCNF. The early steps use simplified names to make the dependencies easier to follow. The final implementation is in [`01_schema.sql`](../sql/01_schema.sql).
 
 ## 0. Unnormalised form (UNF)
 
@@ -25,12 +25,12 @@ ORDER_SHEET(order_id, placed_at, customer_id, customer_name, customer_email, cus
             payment_method, payment_status, shipment_status)
 ```
 
-This sheet has one too many problems:
+Keeping all these details in one sheet creates several problems:
 
 - **Repeating group.** All the order lines (product variations in an order) sit inside one row.
 - **Redundancy.** Customer, product and seller details are repeated on every order.
 - **Update anomaly.** Changing a seller's name means updating many rows.
-- **Deletion anomaly.** Deleting a customer's last order also deletes the customer too.
+- **Deletion anomaly.** Deleting a customer's last order also removes the only stored copy of their details.
 - **Insertion anomaly.** A new product cannot be stored until someone orders it.
 
 ## 1. First normal form (1NF)
@@ -41,11 +41,11 @@ In the unnormalised order sheet, one order contains a group of purchased items. 
 
 For example, suppose order `1001` contains two black medium T-shirts and one blue large T-shirt. Order `1002` also contains one black medium T-shirt. The item details are stored like this:
 
-| order_id | variant_sku | product_name | quantity | unit_price |
-|---|---|---|---|---|
-| 1001 | TSHIRT-BLK-M | T-shirt | 2 | 5000.00 |
-| 1001 | TSHIRT-BLU-L | T-shirt | 1 | 5500.00 |
-| 1002 | TSHIRT-BLK-M | T-shirt | 1 | 5000.00 |
+| order_id | variant_sku  | product_name | quantity | unit_price |
+| -------- | ------------ | ------------ | -------- | ---------- |
+| 1001     | TSHIRT-BLK-M | T-shirt      | 2        | 5000.00    |
+| 1001     | TSHIRT-BLU-L | T-shirt      | 1        | 5500.00    |
+| 1002     | TSHIRT-BLK-M | T-shirt      | 1        | 5000.00    |
 
 Each cell holds one value. There is no list of Stock Keeping Units (SKUs) or quantities inside a cell, and no repeated columns such as `item_1`, `item_2` and `item_3`. This table is only an example of the item columns; the full 1NF relation also includes the order, customer, payment and shipment details shown next.
 
@@ -69,15 +69,15 @@ At this stage, order and customer details still repeat across the rows belonging
 
 Rule: the table is in 1NF and has no partial dependency. Every non-key attribute must depend on the whole composite key, not on part of it.
 
-These are the functional dependencies I found:
+The dependencies below show which columns identify the remaining information in this simplified order sheet:
 
 | Determinant               | Determines                                                                                                    |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `order_id`                | placed*at, customer_id, customer_name/email/phone, shipping_address, coupon_code, payment*\*, shipment_status |
+| `order_id`                | placed_at, customer_id, customer_name, customer_email, customer_phone, shipping_address, coupon_code, payment_method, payment_status, shipment_status |
 | `variant_sku`             | product_name, category_name, brand_name, seller_id, seller_name                                               |
 | `(order_id, variant_sku)` | quantity, unit_price                                                                                          |
 
-Only `quantity` and `unit_price` depend on the full key. Everything else depends on one half of it, so the table splits into three:
+The quantity and purchase price describe a particular item in a particular order, so they depend on both parts of the key. Order details depend on `order_id`, while catalogue details depend on `variant_sku`. Separating these facts gives three relations:
 
 - `orders(order_id, ...)` holds the facts about the order.
 - `product_variants(variant_sku, ...)` holds the facts about the product.
@@ -85,7 +85,7 @@ Only `quantity` and `unit_price` depend on the full key. Everything else depends
 
 ## 3. Third normal form (3NF)
 
-Rule: the table is in 2NF and has no transitive dependency. Non-key attributes depend only on the key, not on other non-key attributes.
+Rule: the table is in 2NF and has no transitive dependency through a non-key attribute. For example, `order_id` identifies a customer, and `customer_id` identifies that customer’s name. Keeping the name in `customers` avoids repeating it in every order.
 
 | Transitive dependency                                                                     | Fix                                                |
 | ----------------------------------------------------------------------------------------- | -------------------------------------------------- |
@@ -105,7 +105,7 @@ Cart, inventory, reviews, refunds and payouts did not come out of the order shee
 
 Rule: for every non-trivial dependency X -> Y, X must be a superkey.
 
-I checked the dependencies in each table:
+A superkey is a column, or a combination of columns, that uniquely identifies a row. The BCNF check asks whether every determinant in a non-trivial dependency can identify a row. The following table summarises the keys considered in this design:
 
 | Table                                                            | Candidate keys                                                                           | Result                                                                              |
 | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
@@ -113,7 +113,7 @@ I checked the dependencies in each table:
 | `sellers`, `brands`, `categories`, `coupons`, `product_variants` | Surrogate PK plus a UNIQUE business key (`email_address`, `name`, `slug`, `code`, `sku`) | Every determinant is a candidate key                                                |
 | `order_items`                                                    | `order_item_id`; `(order_id, variant_id)`                                                | `quantity` and `unit_price` depend on the keys and nothing else determines anything |
 | `cart_items`                                                     | `(cart_id, variant_id)`                                                                  | The key determines `quantity`                                                       |
-| `inventory`                                                      | `variant_id`                                                                             | The key determines `quantity_on_hand` and `quantity_reserved`                       |
+| `inventory`                                                      | `variant_id`                                                                             | The key determines `quantity_in_store` and `quantity_reserved`                      |
 | `shipments`                                                      | `shipment_id`; `tracking_number`; `(order_id, seller_id)`                                | All are superkeys                                                                   |
 | `reviews`                                                        | `review_id`; `(customer_id, product_id)`                                                 | All are superkeys                                                                   |
 | `payouts`                                                        | `payout_id`; `(seller_id, period_start, period_end)`                                     | All are superkeys                                                                   |
@@ -122,18 +122,18 @@ No table has a determinant that is not a superkey, so the schema is in BCNF.
 
 ## 5. Deliberate exceptions (controlled denormalisation)
 
-The study session warns that too much normalisation makes queries more complex. I kept four columns that a strict reading would remove. Each one has a reason and a constraint that protects it.
+Normalisation reduces repeated facts, but the design also needs to preserve purchase history and support frequent calculations. The following columns need some explanation: some store historical facts, while others store calculated or maintained values.
 
 | Column                        | Why it is kept                                                                                                                   | How correctness is protected                                                          |
 | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| `order_items.unit_price`      | Not really redundant: it is the price **at the time of purchase**, and `product_variants.price` can change later                 | `CHECK (unit_price >= 0)`                                                             |
+| `order_items.unit_price`      | It records the price **at the time of purchase**, and `product_variants.price` can change later                 | `CHECK (unit_price >= 0)`                                                             |
 | `orders.total_amount`         | It can be derived from the items and the coupon. Storing it keeps historical orders stable and saves reports from re-aggregating | `CHECK (total_amount >= 0)`; in Portfolio 3 it is set inside the checkout transaction |
-| `payouts.net_amount`          | It can be derived as `gross_sales - commission`. It is stored as the amount actually paid                                        | `CHECK (net_amount = gross_sales - commission)`                                       |
-| `inventory.quantity_reserved` | It could be computed from open orders. It is stored so availability checks are fast                                              | `CHECK (quantity_reserved <= quantity_on_hand)`                                       |
+| `payouts.net_amount`          | It can be derived as `gross_sales - commission`. It is stored as the amount actually paid                                        | Generated column: `gross_sales - commission`                                       |
+| `inventory.quantity_reserved` | It could be computed from open orders. It is stored so availability checks are fast                                              | `CHECK (quantity_reserved <= quantity_in_store)`                                      |
 
 ## 6. Design decisions worth explaining
 
-- **Surrogate keys.** Every table has a `GENERATED ALWAYS AS IDENTITY` key. The business keys (email address, phone numbers for a customer, Stock Keeping Unit (SKU), tracking number) are kept as `UNIQUE`.
+- **Surrogate keys.** Most entities use a UUID stored as `VARCHAR(36)` for their primary key. `cart_items` uses a composite key, while `inventory` shares the product variation’s key. The business keys (email address, phone numbers for a customer, Stock Keeping Unit (SKU), tracking number) are kept as `UNIQUE`.
 - **Referential actions.** I used `ON DELETE CASCADE` only for dependent records: addresses, cart items, shipment events and reviews. Master and history tables such as categories, sellers and orders use the default restrictive behaviour, so history cannot be deleted by accident (see test T11).
 - **Partial unique indexes.** These enforce two business rules that a plain UNIQUE cannot: one default address per customer and one open cart per customer.
 - **Money.** Amounts are `NUMERIC(12,2)`, never floating point, so the arithmetic is exact.

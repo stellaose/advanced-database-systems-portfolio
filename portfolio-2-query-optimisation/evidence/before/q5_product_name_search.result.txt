@@ -1,5 +1,1 @@
- product_id |         name          | status 
-------------+-----------------------+--------
-      12345 | Wireless Laptop 12345 | live
-(1 row)
-
+00000006-0000-4000-8000-000000012345|Wireless Laptop 12345|live

@@ -1,6 +1,6 @@
 # Case study: Konga 
 
-This project uses a simulated marketplace based on Konga to explore the five portfolio tasks. The root README gives the full case study, including the organisation, its customers, the data it handles and its main operations.
+This project uses a simulated marketplace based on Konga to explore the five portfolio tasks. The [root README](../../README.md) explains how the portfolios fit together. This page sets out the marketplace scenario and the data it needs.
 
 ## Scope of the simulated model
 
@@ -15,9 +15,9 @@ For this project, the database covers the product catalogue, stock, shopping car
 - **P4: NoSQL models.** Different product categories need different attributes: a phone may have a storage capacity, while clothing has a size. This provides a useful case for a document model. Carts and sessions can be explored with key-value storage, while product recommendations can be explored with a graph model.
 - **P5: Distributed databases.** Sales events can bring sudden increases in traffic. This makes the marketplace a useful setting for examining read replicas, sharding by seller or region, and the trade-offs between availability and consistency.
 
-## Candidate entities (draft, to refine in P1)
+## Starting point for the database design
 
-The starting set of entities covers customers and their addresses, sellers, the product catalogue, stock and the records created during a purchase. These are represented by the following candidate tables:
+The starting set of entities covers customers and their addresses, sellers, the product catalogue, stock and the records created during a purchase. Portfolio 1 develops these into the following tables:
 
 `customers`, `addresses`, `sellers`, `categories`, `brands`, `products`, `product_variants`, `inventory`, `carts`, `cart_items`, `orders`, `order_items`, `payments`, `refunds`, `shipments`, `shipment_events`, `reviews`, `coupons` and `payouts`.
 
