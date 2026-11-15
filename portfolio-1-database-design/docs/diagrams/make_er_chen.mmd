@@ -1,0 +1,111 @@
+---
+references:
+  - "File: /portfolio-1-database-design/docs/diagrams/make_er_chen.py"
+generationTime: 2026-11-15T09:24:05.314Z
+---
+erDiagram
+    CUSTOMER ||--o{ ADDRESS : has
+    CUSTOMER ||--o{ CART : owns
+    CART }o--o{ VARIANT : in_cart_quantity
+    CUSTOMER ||--o{ ORDER : places
+    ORDER }o--o{ VARIANT : contains_quantity_unit_price
+    ADDRESS ||--o{ ORDER : ships_to
+    COUPON ||--o{ ORDER : discounts
+    ORDER ||--o{ PAYMENT : paid_by
+    PAYMENT ||--o{ REFUND : refunded_by
+    ORDER ||--o{ SHIPMENT : delivered_in
+    SELLER ||--o{ SHIPMENT : fulfils
+    SHIPMENT ||--o{ SHIPMENT_EVENT : tracked_by
+    SELLER ||--o{ PRODUCT : lists
+    CATEGORY ||--o{ PRODUCT : classifies
+    CATEGORY ||--o{ CATEGORY : parent_of
+    BRAND ||--o{ PRODUCT : brands
+    PRODUCT ||--o{ VARIANT : has_variant
+    VARIANT ||--|| INVENTORY : stocked_as
+    CUSTOMER ||--o{ REVIEW : writes
+    PRODUCT ||--o{ REVIEW : receives
+    SELLER ||--o{ PAYOUT : paid_out
+
+    CUSTOMER {
+        int customer_id PK
+        string email_address
+        string full_name
+        string phone_number
+        string password_hash
+        boolean is_active
+        datetime created_at
+    }
+    ADDRESS {
+        int address_id PK
+        string city
+        string state
+    }
+    SELLER {
+        int seller_id PK
+        string business_name
+        float commission_rate
+    }
+    CATEGORY {
+        int category_id PK
+        string name
+    }
+    BRAND {
+        int brand_id PK
+        string name
+    }
+    PRODUCT {
+        int product_id PK
+        string name
+        string status
+    }
+    VARIANT {
+        int variant_id PK
+        string sku
+        float price
+    }
+    INVENTORY {
+        int variant_id PK
+        int quantity_in_store
+        int available_qty "derived"
+    }
+    CART {
+        int cart_id PK
+        string status
+    }
+    COUPON {
+        int coupon_id PK
+        string code
+    }
+    ORDER {
+        int order_id PK
+        datetime placed_at
+        string status
+        float total_amount "derived"
+    }
+    PAYMENT {
+        int payment_id PK
+        string method
+        string status
+    }
+    REFUND {
+        int refund_id PK
+        float amount
+    }
+    SHIPMENT {
+        int shipment_id PK
+        string tracking_number
+    }
+    SHIPMENT_EVENT {
+        int event_id PK
+        datetime event_time
+    }
+    REVIEW {
+        int review_id PK
+        int rating
+    }
+    PAYOUT {
+        int payout_id PK
+        date period_start
+        date period_end
+        float net_amount "derived"
+    }
